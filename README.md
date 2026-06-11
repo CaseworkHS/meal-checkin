@@ -71,3 +71,4 @@ Both have status pages:
 - Maximum 25 meals per day (edit DAILY_CAP in index.html to change)
 - 12pm–5pm Monday–Friday only (edit MEAL_START_HOUR/MEAL_END_HOUR)
 - Outside hours shows clear message in English and Bengali
+- 
