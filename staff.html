@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthServe — Staff Meal Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
+.header{background:#8C0303;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+.header h1{color:#fff;font-size:16px;}
+.header .date{color:rgba(255,255,255,0.8);font-size:12px;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.stat{background:#fff;border-radius:10px;padding:14px;text-align:center;border:0.5px solid #eee;}
+.stat .num{font-size:28px;font-weight:700;color:#8C0303;}
+.stat .lbl{font-size:11px;color:#888;margin-top:3px;}
+.stat.green .num{color:#085041;}
+.stat.amber .num{color:#854F0B;}
+.controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.btn{font-size:12px;padding:8px 14px;border:1px solid #ddd;border-radius:8px;cursor:pointer;background:#fff;font-weight:500;}
+.btn.primary{background:#8C0303;color:#fff;border-color:#8C0303;}
+.btn.green{background:#085041;color:#fff;border-color:#085041;}
+.table-wrap{background:#fff;border-radius:10px;overflow:hidden;border:0.5px solid #eee;}
+.table-header{background:#8C0303;color:#fff;display:grid;grid-template-columns:40px 1fr 80px 80px 60px;padding:8px 12px;font-size:11px;font-weight:600;}
+.table-row{display:grid;grid-template-columns:40px 1fr 80px 80px 60px;padding:8px 12px;font-size:12px;border-bottom:0.5px solid #f0f0f0;align-items:center;}
+.table-row:nth-child(even){background:#fafafa;}
+.table-row:last-child{border-bottom:none;}
+.fin-badge{background:#F4E3DC;color:#8C0303;font-weight:700;padding:2px 7px;border-radius:5px;font-size:11px;}
+.empty{text-align:center;padding:40px;color:#aaa;font-size:13px;}
+.refresh-time{font-size:11px;color:#aaa;text-align:right;margin-bottom:8px;}
+.cap-bar-wrap{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;border:0.5px solid #eee;}
+.cap-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;}
+.cap-label span:first-child{font-weight:600;color:#333;}
+.cap-label span:last-child{color:#8C0303;font-weight:700;}
+.cap-bar{height:12px;background:#f0f0f0;border-radius:6px;overflow:hidden;}
+.cap-fill{height:100%;background:#8C0303;border-radius:6px;transition:width 0.3s;}
+.cap-fill.warn{background:#ECC11C;}
+.cap-fill.ok{background:#085041;}
+.export-note{font-size:11px;color:#888;margin-top:6px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>HealthServe CWSS &mdash; Meal Dashboard</h1>
+  <div class="date" id="header-date"></div>
+</div>
+
+<div class="stats">
+  <div class="stat green">
+    <div class="num" id="stat-today">0</div>
+    <div class="lbl">Meals today</div>
+  </div>
+  <div class="stat amber">
+    <div class="num" id="stat-remaining">25</div>
+    <div class="lbl">Remaining cap</div>
+  </div>
+  <div class="stat">
+    <div class="num" id="stat-time">--:--</div>
+    <div class="lbl">SG time now</div>
+  </div>
+</div>
+
+<div class="cap-bar-wrap">
+  <div class="cap-label">
+    <span>Daily cap usage</span>
+    <span id="cap-label-right">0 / 25 meals</span>
+  </div>
+  <div class="cap-bar">
+    <div class="cap-fill" id="cap-fill" style="width:0%"></div>
+  </div>
+  <div class="export-note">Data exports automatically to Excel via Supabase dashboard &middot; <a href="https://supabase.com" target="_blank" style="color:#8C0303;">Open Supabase</a></div>
+</div>
+
+<div class="controls">
+  <button class="btn primary" onclick="loadData()">&#8635; Refresh</button>
+  <button class="btn" onclick="filterDay('today')">Today</button>
+  <button class="btn" onclick="filterDay('week')">This week</button>
+  <input type="date" id="date-filter" style="font-size:12px;padding:7px;border:1px solid #ddd;border-radius:8px;" onchange="loadFiltered()">
+  <button class="btn green" onclick="exportCSV()">Export CSV</button>
+</div>
+
+<div class="refresh-time" id="refresh-time"></div>
+
+<div class="table-wrap">
+  <div class="table-header">
+    <div>#</div>
+    <div>FIN last 4</div>
+    <div>Date</div>
+    <div>Time (SG)</div>
+    <div>Meal #</div>
+  </div>
+  <div id="table-body"><div class="empty">Loading...</div></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const DAILY_CAP = 25;
+
+function sgNow() {
+  return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'}));
+}
+function sgDateStr(d) {
+  d = d || sgNow();
+  return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+}
+
+async function apiGet(path) {
+  const r = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+  return r.json();
+}
+
+let allData = [];
+
+async function loadData() {
+  const today = sgDateStr();
+  document.getElementById('refresh-time').textContent = 'Last refreshed: '+sgNow().toTimeString().slice(0,8);
+  try {
+    const data = await apiGet('meal_checkins?select=*&checkin_date=eq.'+today+'&order=checkin_time.asc');
+    allData = Array.isArray(data) ? data : [];
+    updateStats(allData);
+    renderTable(allData);
+  } catch(e) {
+    document.getElementById('table-body').innerHTML = '<div class="empty">Connection error. Check Supabase config.</div>';
+  }
+}
+
+async function loadFiltered() {
+  const d = document.getElementById('date-filter').value;
+  if (!d) return;
+  try {
+    const data = await apiGet('meal_checkins?select=*&checkin_date=eq.'+d+'&order=checkin_time.asc');
+    allData = Array.isArray(data) ? data : [];
+    renderTable(allData);
+  } catch(e) {}
+}
+
+function filterDay(type) {
+  if (type==='today') {
+    document.getElementById('date-filter').value = sgDateStr();
+    loadFiltered();
+  } else {
+    loadData();
+  }
+}
+
+function updateStats(data) {
+  const n = data.length;
+  const remaining = Math.max(0, DAILY_CAP - n);
+  const pct = Math.min(100, (n/DAILY_CAP)*100);
+  document.getElementById('stat-today').textContent = n;
+  document.getElementById('stat-remaining').textContent = remaining;
+  document.getElementById('cap-label-right').textContent = n+' / '+DAILY_CAP+' meals';
+  const fill = document.getElementById('cap-fill');
+  fill.style.width = pct+'%';
+  fill.className = 'cap-fill ' + (pct >= 90 ? '' : pct >= 60 ? 'warn' : 'ok');
+}
+
+function renderTable(data) {
+  if (!data.length) {
+    document.getElementById('table-body').innerHTML = '<div class="empty">No meals recorded for this date</div>';
+    return;
+  }
+  let html = '';
+  data.forEach((row, i) => {
+    html += `<div class="table-row">
+      <div style="color:#aaa;font-size:11px;">${i+1}</div>
+      <div><span class="fin-badge">${row.fin_last4}</span></div>
+      <div style="color:#666;">${row.checkin_date}</div>
+      <div style="color:#666;">${row.checkin_time||'--'}</div>
+      <div style="color:#8C0303;font-weight:600;">#${row.meal_number||i+1}</div>
+    </div>`;
+  });
+  document.getElementById('table-body').innerHTML = html;
+}
+
+function exportCSV() {
+  if (!allData.length) { alert('No data to export'); return; }
+  const rows = [['#','FIN Last 4','Date','Time','Meal Number']];
+  allData.forEach((r,i) => rows.push([i+1, r.fin_last4, r.checkin_date, r.checkin_time, r.meal_number]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'meals_'+sgDateStr()+'.csv';
+  a.click();
+}
+
+// Clock
+setInterval(() => {
+  document.getElementById('stat-time').textContent = sgNow().toTimeString().slice(0,5);
+}, 10000);
+
+// Init
+const now = sgNow();
+document.getElementById('header-date').textContent = now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+document.getElementById('stat-time').textContent = now.toTimeString().slice(0,5);
+document.getElementById('date-filter').value = sgDateStr();
+loadData();
+setInterval(loadData, 60000); // auto-refresh every minute
+</script>
+</body>
+</html>
