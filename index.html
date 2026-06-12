@@ -25,19 +25,20 @@ input:focus{outline:none;border-color:#8C0303;}
 .status.success{background:#E1F5EE;border:2px solid #085041;}
 .status.error{background:#FCEBEB;border:2px solid #A32D2D;}
 .status.warning{background:#FAEEDA;border:2px solid #854F0B;}
+.status.notfound{background:#F0F0FF;border:2px solid #6B6BBB;}
 .status-icon{font-size:52px;margin-bottom:10px;}
 .status-title{font-size:20px;font-weight:700;margin-bottom:6px;}
 .status-msg{font-size:13px;line-height:1.7;}
 .status.success .status-title{color:#085041;}
 .status.error .status-title{color:#A32D2D;}
 .status.warning .status-title{color:#854F0B;}
+.status.notfound .status-title{color:#4444AA;}
 .info-row{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-top:16px;padding-top:12px;border-top:0.5px solid #eee;}
 .time-restrict{background:#FFF8E1;border:1px solid #ECC11C;border-radius:8px;padding:10px 14px;font-size:12px;color:#633806;margin-bottom:16px;text-align:center;line-height:1.6;}
 .loader{display:none;text-align:center;padding:24px;color:#888;font-size:13px;}
 .staff-link{text-align:center;margin-top:16px;}
 .staff-link a{font-size:11px;color:#ccc;text-decoration:none;}
 .test-banner{background:#085041;border-radius:8px;padding:6px 12px;font-size:11px;color:#fff;text-align:center;margin-bottom:12px;display:none;}
-.multilang{font-size:11px;color:#888;margin-top:5px;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -92,13 +93,14 @@ input:focus{outline:none;border-color:#8C0303;}
 
 <div class="staff-link">
   <a href="staff.html">Staff view &rarr;</a> &nbsp;|&nbsp;
+  <a href="admin.html">Admin &rarr;</a> &nbsp;|&nbsp;
   <a href="#" onclick="toggleTest();return false;" id="test-toggle">Staff test mode</a>
 </div>
 
 <script>
 const SB_URL='https://mstxqyftlshgwmzrrkyr.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdHhxeWZ0bHNoZ3dtenJya3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODAxMjUsImV4cCI6MjA5Njc1NjEyNX0.6pwUe7fi1xFMuU83oZj7matMBzWiZtJUYl7nS9u6X50';
-const MEAL_START=12, MEAL_END=17, DAILY_CAP=30;
+const MEAL_START=12,MEAL_END=17,DAILY_CAP=30;
 let testMode=false;
 
 function sgNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'}));}
@@ -119,8 +121,8 @@ async function dbGet(path){
   if(!r.ok)throw new Error('DB '+r.status);
   return r.json();
 }
-async function dbPost(data){
-  const r=await fetch(SB_URL+'/rest/v1/meal_checkins',{
+async function dbPost(table,data){
+  const r=await fetch(SB_URL+'/rest/v1/'+table,{
     method:'POST',
     headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
     body:JSON.stringify(data)
@@ -142,7 +144,7 @@ function showStatus(type,icon,title,msg){
 async function submitCheckin(bypass){
   const name=document.getElementById('name-input').value.trim();
   const fin4=document.getElementById('fin-input').value.trim().toUpperCase();
-  if(!name){alert('Please enter your name');return;}
+  if(!name){alert('Please enter your name\nঅনুগ্রহ করে আপনার নাম লিখুন');return;}
   if(fin4.length!==4){alert('Please enter exactly 4 characters of your FIN');return;}
 
   if(!bypass){
@@ -160,38 +162,62 @@ async function submitCheckin(bypass){
   const today=sgDate();
 
   try{
+    // Check if FIN is registered
+    const registered=await dbGet('workers?select=id,worker_name,worker_type,active&fin_last4=eq.'+fin4+'&active=eq.true');
+    if(!Array.isArray(registered)||registered.length===0){
+      showStatus('notfound','🚫','Not registered',
+        'FIN ····'+fin4+' is not registered for the food programme.<br><br>'+
+        'এই FIN নিবন্ধিত নয়। অনুগ্রহ করে CWSS অফিসে আসুন।<br>'+
+        'இந்த FIN பதிவு செய்யப்படவில்லை. CWSS அலுவலகத்திற்கு வாருங்கள்.<br><br>'+
+        '<strong>Please visit the HealthServe CWSS office</strong><br>'+
+        'or WhatsApp: <strong>+65 6983 6097</strong>');
+      return;
+    }
+
+    const workerType=registered[0].worker_type||'Regular';
+
+    // Check daily cap
     const todayAll=await dbGet('meal_checkins?select=id&checkin_date=eq.'+today);
     if(todayAll.length>=DAILY_CAP){
       showStatus('warning','🚫','Meals full for today',
         'Today\'s meals have been fully allocated.<br><br>'+
         'আজকের খাবার শেষ হয়ে গেছে।<br>'+
         'இன்றைய உணவு முடிந்துவிட்டது।<br><br>'+
-        'Please contact HealthServe CWSS:<br><strong>WhatsApp +65 6983 6097</strong>');
+        'Please WhatsApp HealthServe CWSS:<br><strong>+65 6983 6097</strong>');
       return;
     }
+
+    // Check duplicate
     const existing=await dbGet('meal_checkins?select=id&fin_last4=eq.'+fin4+'&checkin_date=eq.'+today);
     if(existing.length>0){
       showStatus('error','❌','Already collected today',
         '<strong>'+name+'</strong> (FIN ····'+fin4+') has already collected a meal today.<br><br>'+
         'আজ এই FIN দিয়ে ইতিমধ্যে খাবার নেওয়া হয়েছে।<br>'+
         'இன்று இந்த FIN-ல் உணவு ஏற்கனவே வழங்கப்பட்டது।<br><br>'+
-        '<small>If this is wrong, WhatsApp HealthServe: <strong>+65 6983 6097</strong><br>ভুল হলে WhatsApp করুন: +65 6983 6097<br>தவறெனில் WhatsApp செய்யுங்கள்: +65 6983 6097</small>');
+        '<small>If wrong, WhatsApp: <strong>+65 6983 6097</strong><br>'+
+        'ভুল হলে WhatsApp করুন: +65 6983 6097<br>'+
+        'தவறெனில் WhatsApp செய்யுங்கள்: +65 6983 6097</small>');
       return;
     }
-    await dbPost({
+
+    // Log redemption
+    await dbPost('meal_checkins',{
       fin_last4:fin4,
       worker_name:name,
+      worker_type:workerType,
       checkin_date:today,
       checkin_time:sgNow().toTimeString().slice(0,8),
       meal_number:todayAll.length+1
     });
+
     showStatus('success','✅','Meal approved',
       '<strong style="font-size:16px;">'+name+'</strong><br>'+
-      (bypass?'<span style="font-size:11px;background:#085041;color:#fff;padding:1px 8px;border-radius:4px;">TEST</span><br>':'')+
+      (bypass?'<span style="font-size:11px;background:#085041;color:#fff;padding:1px 8px;border-radius:4px;margin-bottom:4px;display:inline-block;">TEST</span><br>':'')+
       '<br><strong style="font-size:18px;">Show this screen to collect your meal</strong><br><br>'+
       '<span style="color:#085041;">এই স্ক্রিন দেখিয়ে খাবার নিন</span><br>'+
       '<span style="color:#085041;">இந்த திரையை காட்டி உணவு பெறுங்கள்</span><br><br>'+
       '<small style="color:#aaa;">'+today+' &middot; '+sgNow().toTimeString().slice(0,5)+' SG</small>');
+
   }catch(e){
     showStatus('error','⚠️','Connection error',
       'Please try again.<br>WhatsApp HealthServe: <strong>+65 6983 6097</strong>');

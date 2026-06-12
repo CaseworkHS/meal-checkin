@@ -22,8 +22,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
 .btn.primary{background:#8C0303;color:#fff;border-color:#8C0303;}
 .btn.green{background:#085041;color:#fff;border-color:#085041;}
 .table-wrap{background:#fff;border-radius:10px;overflow:hidden;border:0.5px solid #eee;}
-.table-header{background:#8C0303;color:#fff;display:grid;grid-template-columns:36px 1fr 80px 95px 80px;padding:8px 12px;font-size:11px;font-weight:600;gap:4px;}
-.table-row{display:grid;grid-template-columns:36px 1fr 80px 95px 80px;padding:8px 12px;font-size:12px;border-bottom:0.5px solid #f0f0f0;align-items:center;gap:4px;}
+.table-header{background:#8C0303;color:#fff;display:grid;grid-template-columns:36px 1fr 70px 80px 90px 80px;padding:8px 12px;font-size:11px;font-weight:600;gap:4px;}
+.table-row{display:grid;grid-template-columns:36px 1fr 70px 80px 90px 80px;padding:8px 12px;font-size:12px;border-bottom:0.5px solid #f0f0f0;align-items:center;gap:4px;}
 .table-row:nth-child(even){background:#fafafa;}
 .table-row:last-child{border-bottom:none;}
 .fin-badge{background:#F4E3DC;color:#8C0303;font-weight:700;padding:2px 7px;border-radius:5px;font-size:11px;display:inline-block;}
@@ -71,6 +71,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
     <div>#</div>
     <div>Worker name</div>
     <div>FIN last 4</div>
+    <div>Type</div>
     <div>Date</div>
     <div>Time (SG)</div>
   </div>
@@ -147,6 +148,7 @@ function renderTable(data){
       <div style="color:#aaa;font-size:11px;">${i+1}</div>
       <div style="font-weight:500;color:#1a1a1a;">${r.worker_name||'--'}</div>
       <div><span class="fin-badge">${r.fin_last4}</span></div>
+      <div><span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;background:${r.worker_type==='Walk-in'?'#FAEEDA':r.worker_type==='New'?'#E6F1FB':'#E1F5EE'};color:${r.worker_type==='Walk-in'?'#633806':r.worker_type==='New'?'#0C447C':'#085041'}">${r.worker_type||'Regular'}</span></div>
       <div style="color:#666;font-size:11px;">${r.checkin_date}</div>
       <div style="color:#666;font-size:11px;">${r.checkin_time||'--'}</div>
     </div>`).join('');

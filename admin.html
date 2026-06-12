@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthServe — Worker Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
+.pin-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.pin-card{background:#fff;border-radius:16px;padding:32px 28px;max-width:340px;width:100%;box-shadow:0 2px 20px rgba(0,0,0,0.08);text-align:center;}
+.pin-logo{background:#8C0303;border-radius:10px;padding:14px;margin-bottom:20px;}
+.pin-logo h2{color:#fff;font-size:16px;font-weight:700;}
+.pin-logo p{color:rgba(255,255,255,0.7);font-size:11px;margin-top:3px;}
+.pin-label{font-size:13px;color:#555;margin-bottom:10px;}
+.pin-input{width:100%;font-size:20px;padding:12px;border:1.5px solid #ddd;border-radius:10px;text-align:center;letter-spacing:4px;font-weight:700;}
+.pin-input:focus{outline:none;border-color:#8C0303;}
+.pin-btn{width:100%;font-size:14px;padding:12px;font-weight:700;background:#8C0303;color:#fff;border:none;border-radius:10px;cursor:pointer;margin-top:10px;}
+.pin-error{color:#A32D2D;font-size:12px;margin-top:8px;display:none;}
+
+.main{display:none;}
+.header{background:#8C0303;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.header h1{color:#fff;font-size:16px;}
+.header-right{display:flex;gap:8px;align-items:center;}
+.header a{color:rgba(255,255,255,0.8);font-size:12px;text-decoration:none;}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{padding:8px 16px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:8px;color:#555;}
+.tab-btn.active{background:#8C0303;color:#fff;border-color:#8C0303;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.panel{background:#fff;border-radius:10px;padding:16px;margin-bottom:14px;border:0.5px solid #eee;}
+.panel h3{font-size:13px;font-weight:600;color:#8C0303;margin-bottom:12px;padding-bottom:6px;border-bottom:0.5px solid #eee;}
+label{font-size:11px;color:#555;display:block;margin-bottom:4px;margin-top:10px;font-weight:500;}
+label:first-of-type{margin-top:0;}
+input,select{width:100%;font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:7px;background:#fff;}
+input:focus,select:focus{outline:none;border-color:#8C0303;}
+.btn{font-size:12px;padding:8px 16px;border:1px solid #ddd;border-radius:8px;cursor:pointer;background:#fff;font-weight:500;}
+.btn.primary{background:#8C0303;color:#fff;border-color:#8C0303;width:100%;font-size:13px;padding:10px;margin-top:8px;}
+.btn.green{background:#085041;color:#fff;border-color:#085041;}
+.btn.red{background:#A32D2D;color:#fff;border-color:#A32D2D;font-size:11px;padding:5px 10px;}
+.btn.amber{background:#854F0B;color:#fff;border-color:#854F0B;font-size:11px;padding:5px 10px;}
+.msg{font-size:12px;padding:8px 12px;border-radius:6px;margin-top:8px;display:none;}
+.msg.success{background:#E1F5EE;color:#085041;border:1px solid #085041;}
+.msg.error{background:#FCEBEB;color:#A32D2D;border:1px solid #A32D2D;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.stat{background:#fff;border-radius:10px;padding:12px;text-align:center;border:0.5px solid #eee;}
+.stat .num{font-size:24px;font-weight:700;color:#8C0303;}
+.stat .lbl{font-size:10px;color:#888;margin-top:2px;}
+.table-wrap{background:#fff;border-radius:10px;overflow:hidden;border:0.5px solid #eee;}
+.table-header{background:#8C0303;color:#fff;display:grid;grid-template-columns:1fr 70px 90px 80px 80px;padding:8px 12px;font-size:11px;font-weight:600;gap:4px;}
+.table-row{display:grid;grid-template-columns:1fr 70px 90px 80px 80px;padding:7px 12px;font-size:11px;border-bottom:0.5px solid #f0f0f0;align-items:center;gap:4px;}
+.table-row:nth-child(even){background:#fafafa;}
+.badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;display:inline-block;}
+.badge-reg{background:#E1F5EE;color:#085041;}
+.badge-new{background:#E6F1FB;color:#0C447C;}
+.badge-wi{background:#FAEEDA;color:#633806;}
+.badge-active{background:#E1F5EE;color:#085041;}
+.badge-inactive{background:#F5F5F5;color:#888;}
+.search-bar{display:flex;gap:8px;margin-bottom:10px;}
+.search-bar input{flex:1;}
+.empty{text-align:center;padding:30px;color:#aaa;font-size:13px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div class="pin-screen" id="pin-screen">
+  <div class="pin-card">
+    <div class="pin-logo">
+      <h2>HealthServe CWSS</h2>
+      <p>Food Programme Admin</p>
+    </div>
+    <div class="pin-label">Enter staff PIN to access</div>
+    <input type="password" class="pin-input" id="pin-input" maxlength="8" placeholder="••••••"
+      onkeypress="if(event.key==='Enter')checkPin()">
+    <button class="pin-btn" onclick="checkPin()">Enter</button>
+    <div class="pin-error" id="pin-error">Incorrect PIN. Try again.</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="main" id="main-app">
+  <div class="header">
+    <h1>HealthServe CWSS &mdash; Food Programme Admin</h1>
+    <div class="header-right">
+      <a href="staff.html">Dashboard &rarr;</a>
+      <a href="index.html">Check-in &rarr;</a>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('workers')">Worker list</button>
+    <button class="tab-btn" onclick="switchTab('add')">Add worker</button>
+  </div>
+
+  <!-- WORKER LIST TAB -->
+  <div id="tab-workers" class="tab-panel active">
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Total active</div></div>
+      <div class="stat"><div class="num" id="stat-regular">0</div><div class="lbl">Regular</div></div>
+      <div class="stat"><div class="num" id="stat-walkin">0</div><div class="lbl">Walk-in / New</div></div>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search by name or FIN..." oninput="renderWorkers()">
+      <button class="btn" onclick="loadWorkers()">&#8635; Refresh</button>
+      <select id="filter-type" onchange="renderWorkers()" style="width:auto;font-size:12px;">
+        <option value="">All types</option>
+        <option value="Regular">Regular</option>
+        <option value="New">New</option>
+        <option value="Walk-in">Walk-in</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <div>Name &amp; FIN</div>
+        <div>Type</div>
+        <div>Nationality</div>
+        <div>Added by</div>
+        <div>Actions</div>
+      </div>
+      <div id="workers-table-body"><div class="empty">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- ADD WORKER TAB -->
+  <div id="tab-add" class="tab-panel">
+    <div class="panel">
+      <h3>Add worker to food programme</h3>
+      <label>Full name</label>
+      <input type="text" id="add-name" placeholder="e.g. Mohammad Rahman">
+      <div class="form-grid" style="margin-top:0;">
+        <div>
+          <label>FIN last 4</label>
+          <input type="text" id="add-fin" maxlength="4" placeholder="e.g. 662P" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">
+        </div>
+        <div>
+          <label>Nationality</label>
+          <select id="add-nat">
+            <option value="Bangladeshi">Bangladeshi</option>
+            <option value="Indian">Indian</option>
+            <option value="PRC Chinese">PRC Chinese</option>
+            <option value="Malaysian">Malaysian</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <label>Worker type</label>
+      <select id="add-type">
+        <option value="Regular">Regular — ongoing programme</option>
+        <option value="New">New worker — first month</option>
+        <option value="Walk-in">Walk-in — one time visit</option>
+      </select>
+      <label>Added by (your name)</label>
+      <select id="add-by">
+        <option>Durga</option><option>Daniel</option><option>Bobby</option>
+        <option>Tanin</option><option>Sudipta</option><option>Tanushree</option>
+      </select>
+      <button class="btn primary" onclick="addWorker()">Add worker to programme</button>
+      <div class="msg" id="add-msg"></div>
+    </div>
+
+    <div class="panel" style="background:#FFF8E1;border-color:#ECC11C;">
+      <h3 style="color:#633806;">Walk-in process reminder</h3>
+      <div style="font-size:12px;color:#633806;line-height:1.7;">
+        1. Worker visits CWSS office before going to Al-Rich<br>
+        2. CW adds them here as <strong>Walk-in</strong> type<br>
+        3. Worker goes to Al-Rich, scans QR, enters name + FIN<br>
+        4. App approves — logged as Walk-in in dashboard<br>
+        5. <strong>Next month:</strong> if they continue, change type to Regular
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SB_URL='https://mstxqyftlshgwmzrrkyr.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdHhxeWZ0bHNoZ3dtenJya3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODAxMjUsImV4cCI6MjA5Njc1NjEyNX0.6pwUe7fi1xFMuU83oZj7matMBzWiZtJUYl7nS9u6X50';
+const PIN='CWFP26';
+
+let allWorkers=[];
+
+function checkPin(){
+  const v=document.getElementById('pin-input').value.trim().toUpperCase();
+  if(v===PIN){
+    document.getElementById('pin-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    loadWorkers();
+  } else {
+    const err=document.getElementById('pin-error');
+    err.style.display='block';
+    document.getElementById('pin-input').value='';
+    setTimeout(()=>err.style.display='none',3000);
+  }
+}
+
+document.getElementById('pin-input').addEventListener('keypress',e=>{if(e.key==='Enter')checkPin();});
+
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes("'"+t+"'")));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+async function dbGet(path){
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+  if(!r.ok)throw new Error('DB '+r.status);
+  return r.json();
+}
+async function dbPost(table,data){
+  const r=await fetch(SB_URL+'/rest/v1/'+table,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+    body:JSON.stringify(data)
+  });
+  if(!r.ok)throw new Error('DB '+r.status);
+  return r.json();
+}
+async function dbPatch(table,id,data){
+  const r=await fetch(SB_URL+'/rest/v1/'+table+'?id=eq.'+id,{
+    method:'PATCH',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  });
+  if(!r.ok)throw new Error('DB '+r.status);
+}
+
+async function loadWorkers(){
+  try{
+    const data=await dbGet('workers?select=*&order=worker_name.asc');
+    allWorkers=Array.isArray(data)?data:[];
+    renderWorkers();
+    updateStats();
+  }catch(e){
+    document.getElementById('workers-table-body').innerHTML='<div class="empty">Connection error: '+e.message+'</div>';
+  }
+}
+
+function updateStats(){
+  const active=allWorkers.filter(w=>w.active);
+  document.getElementById('stat-total').textContent=active.length;
+  document.getElementById('stat-regular').textContent=active.filter(w=>w.worker_type==='Regular').length;
+  document.getElementById('stat-walkin').textContent=active.filter(w=>w.worker_type!=='Regular').length;
+}
+
+function renderWorkers(){
+  const search=document.getElementById('search-input').value.toLowerCase();
+  const typeFilter=document.getElementById('filter-type').value;
+  let filtered=allWorkers.filter(w=>{
+    const matchSearch=!search||(w.worker_name||'').toLowerCase().includes(search)||(w.fin_last4||'').toLowerCase().includes(search);
+    const matchType=!typeFilter||w.worker_type===typeFilter;
+    return matchSearch&&matchType;
+  });
+
+  if(!filtered.length){
+    document.getElementById('workers-table-body').innerHTML='<div class="empty">No workers found</div>';
+    return;
+  }
+
+  const badgeClass={Regular:'badge-reg',New:'badge-new','Walk-in':'badge-wi'};
+
+  document.getElementById('workers-table-body').innerHTML=filtered.map(w=>`
+    <div class="table-row" style="${!w.active?'opacity:0.5;':''}" id="row-${w.id}">
+      <div>
+        <div style="font-weight:600;color:#1a1a1a;font-size:12px;">${w.worker_name||'--'}</div>
+        <div style="font-size:10px;color:#999;">FIN ····${w.fin_last4} &middot; ${w.nationality||''}</div>
+      </div>
+      <div><span class="badge ${badgeClass[w.worker_type]||'badge-reg'}">${w.worker_type||'Regular'}</span></div>
+      <div style="color:#666;font-size:11px;">${w.nationality||'--'}</div>
+      <div style="color:#666;font-size:10px;">${w.added_by||'--'}<br>${(w.date_added||'').slice(0,10)}</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${w.active
+          ? `<button class="btn red" onclick="toggleActive('${w.id}',false)">Remove</button>`
+          : `<button class="btn green" onclick="toggleActive('${w.id}',true)" style="font-size:11px;padding:5px 10px;">Restore</button>`
+        }
+        ${w.worker_type==='Walk-in'?`<button class="btn amber" onclick="upgradeToRegular('${w.id}')">→ Regular</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+async function toggleActive(id,active){
+  try{
+    await dbPatch('workers',id,{active});
+    const w=allWorkers.find(x=>x.id===id);
+    if(w)w.active=active;
+    renderWorkers();
+    updateStats();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+async function upgradeToRegular(id){
+  if(!confirm('Change this worker to Regular type?'))return;
+  try{
+    await dbPatch('workers',id,{worker_type:'Regular'});
+    const w=allWorkers.find(x=>x.id===id);
+    if(w)w.worker_type='Regular';
+    renderWorkers();
+    updateStats();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+async function addWorker(){
+  const name=document.getElementById('add-name').value.trim();
+  const fin4=document.getElementById('add-fin').value.trim().toUpperCase();
+  const nat=document.getElementById('add-nat').value;
+  const type=document.getElementById('add-type').value;
+  const addedBy=document.getElementById('add-by').value;
+  const msg=document.getElementById('add-msg');
+
+  if(!name||fin4.length!==4){
+    msg.className='msg error';msg.style.display='block';
+    msg.textContent='Please enter name and 4-character FIN';
+    return;
+  }
+
+  // Check duplicate FIN
+  const existing=allWorkers.filter(w=>w.fin_last4===fin4&&w.active);
+  if(existing.length>0){
+    msg.className='msg error';msg.style.display='block';
+    msg.textContent='FIN ····'+fin4+' is already registered as '+existing[0].worker_name;
+    return;
+  }
+
+  try{
+    await dbPost('workers',{
+      worker_name:name,
+      fin_last4:fin4,
+      nationality:nat,
+      worker_type:type,
+      added_by:addedBy,
+      date_added:new Date().toISOString().slice(0,10),
+      active:true
+    });
+    msg.className='msg success';msg.style.display='block';
+    msg.textContent=name+' (FIN ····'+fin4+') added successfully as '+type;
+    document.getElementById('add-name').value='';
+    document.getElementById('add-fin').value='';
+    await loadWorkers();
+    setTimeout(()=>msg.style.display='none',4000);
+  }catch(e){
+    msg.className='msg error';msg.style.display='block';
+    msg.textContent='Error adding worker: '+e.message;
+  }
+}
+</script>
+</body>
+</html>
