@@ -14,29 +14,30 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;min-height:100vh;display:fl
 .hs-badge{background:rgba(255,255,255,0.15);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;display:inline-block;margin-top:6px;}
 .form-group{margin-bottom:16px;}
 label{font-size:13px;color:#555;display:block;margin-bottom:6px;font-weight:500;}
-input{width:100%;font-size:18px;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;text-align:center;letter-spacing:3px;font-weight:700;text-transform:uppercase;}
+.label-sub{font-size:11px;color:#999;margin-top:2px;}
+input{width:100%;font-size:16px;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;}
+input#fin-input{font-size:18px;text-align:center;letter-spacing:3px;font-weight:700;text-transform:uppercase;}
 input:focus{outline:none;border-color:#8C0303;}
 .btn{width:100%;font-size:15px;padding:14px;font-weight:700;background:#8C0303;color:#fff;border:none;border-radius:10px;cursor:pointer;margin-top:8px;}
-.btn:disabled{background:#ccc;cursor:not-allowed;}
 .btn:active{transform:scale(0.98);}
 .btn-test{width:100%;font-size:12px;padding:9px;font-weight:500;background:#085041;color:#fff;border:none;border-radius:10px;cursor:pointer;margin-top:8px;}
-.status{display:none;border-radius:12px;padding:20px;text-align:center;margin-top:16px;}
+.status{display:none;border-radius:12px;padding:24px 20px;text-align:center;margin-top:4px;}
 .status.success{background:#E1F5EE;border:2px solid #085041;}
 .status.error{background:#FCEBEB;border:2px solid #A32D2D;}
 .status.warning{background:#FAEEDA;border:2px solid #854F0B;}
-.status-icon{font-size:48px;margin-bottom:8px;}
-.status-title{font-size:18px;font-weight:700;margin-bottom:4px;}
-.status-msg{font-size:13px;line-height:1.6;}
+.status-icon{font-size:52px;margin-bottom:10px;}
+.status-title{font-size:20px;font-weight:700;margin-bottom:6px;}
+.status-msg{font-size:13px;line-height:1.7;}
 .status.success .status-title{color:#085041;}
 .status.error .status-title{color:#A32D2D;}
 .status.warning .status-title{color:#854F0B;}
 .info-row{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-top:16px;padding-top:12px;border-top:0.5px solid #eee;}
-.time-restrict{background:#FFF8E1;border:1px solid #ECC11C;border-radius:8px;padding:10px 14px;font-size:12px;color:#633806;margin-bottom:16px;text-align:center;}
-.loader{display:none;text-align:center;padding:16px;color:#888;font-size:13px;}
-.staff-link{text-align:center;margin-top:20px;}
-.staff-link a{font-size:11px;color:#aaa;text-decoration:none;}
-.bn{font-size:12px;color:#666;margin-top:4px;}
+.time-restrict{background:#FFF8E1;border:1px solid #ECC11C;border-radius:8px;padding:10px 14px;font-size:12px;color:#633806;margin-bottom:16px;text-align:center;line-height:1.6;}
+.loader{display:none;text-align:center;padding:24px;color:#888;font-size:13px;}
+.staff-link{text-align:center;margin-top:16px;}
+.staff-link a{font-size:11px;color:#ccc;text-decoration:none;}
 .test-banner{background:#085041;border-radius:8px;padding:6px 12px;font-size:11px;color:#fff;text-align:center;margin-bottom:12px;display:none;}
+.multilang{font-size:11px;color:#888;margin-top:5px;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -50,17 +51,25 @@ input:focus{outline:none;border-color:#8C0303;}
   <div class="test-banner" id="test-banner">&#9881; TEST MODE — time restriction bypassed</div>
 
   <div class="time-restrict" id="time-warning" style="display:none;">
-    &#9201; Meal collection is only available<br>
-    <strong>12pm &ndash; 5pm, Monday to Friday</strong><br>
-    <span class="bn">খাবার সংগ্রহের সময়: দুপুর ১২টা – বিকাল ৫টা</span>
+    &#9201; <strong>12pm – 5pm, Monday to Friday only</strong><br>
+    <span style="font-size:11px;">দুপুর ১২টা – বিকাল ৫টা (সোমবার–শুক্রবার)</span><br>
+    <span style="font-size:11px;">மதியம் 12 – மாலை 5 மணி (திங்கள்–வெள்ளி)</span>
   </div>
 
   <div id="checkin-form">
     <div class="form-group">
-      <label>Enter last 4 characters of your FIN</label>
+      <label>Your full name
+        <div class="label-sub">আপনার পুরো নাম &nbsp;|&nbsp; உங்கள் முழு பெயர்</div>
+      </label>
+      <input type="text" id="name-input" placeholder="e.g. Mohammad Rahman"
+        autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="form-group">
+      <label>Last 4 characters of your FIN
+        <div class="label-sub">FIN-এর শেষ ৪টি &nbsp;|&nbsp; FIN கடைசி 4 எழுத்துகள்</div>
+      </label>
       <input type="text" id="fin-input" maxlength="4" placeholder="e.g. 662P"
         autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
-      <div class="bn" style="text-align:center;margin-top:6px;">আপনার FIN-এর শেষ ৪টি অক্ষর লিখুন</div>
     </div>
     <button class="btn" onclick="submitCheckin(false)">Check in for meal &#10003;</button>
     <button class="btn-test" id="test-btn" onclick="submitCheckin(true)" style="display:none;">
@@ -72,28 +81,24 @@ input:focus{outline:none;border-color:#8C0303;}
     </div>
   </div>
 
-  <div class="loader" id="loader">Checking... please wait</div>
+  <div class="loader" id="loader">&#8987; Checking... please wait</div>
 
   <div class="status" id="status-box">
     <div class="status-icon" id="status-icon"></div>
     <div class="status-title" id="status-title"></div>
     <div class="status-msg" id="status-msg"></div>
-    <button class="btn" onclick="resetForm()" style="margin-top:16px;display:none;" id="reset-btn">
-      Check in another person
-    </button>
   </div>
 </div>
 
 <div class="staff-link">
   <a href="staff.html">Staff view &rarr;</a> &nbsp;|&nbsp;
-  <a href="#" onclick="toggleTest();return false;" id="test-toggle">Enable test mode</a>
+  <a href="#" onclick="toggleTest();return false;" id="test-toggle">Staff test mode</a>
 </div>
 
 <script>
 const SB_URL='https://mstxqyftlshgwmzrrkyr.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdHhxeWZ0bHNoZ3dtenJya3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODAxMjUsImV4cCI6MjA5Njc1NjEyNX0.6pwUe7fi1xFMuU83oZj7matMBzWiZtJUYl7nS9u6X50';
 const MEAL_START=12, MEAL_END=17, DAILY_CAP=30;
-
 let testMode=false;
 
 function sgNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'}));}
@@ -105,16 +110,12 @@ function toggleTest(){
   testMode=!testMode;
   document.getElementById('test-btn').style.display=testMode?'block':'none';
   document.getElementById('test-banner').style.display=testMode?'block':'none';
-  document.getElementById('test-toggle').textContent=testMode?'Disable test mode':'Enable test mode';
-  if(testMode&&document.getElementById('time-warning').style.display!='none'){
-    document.getElementById('time-warning').style.display='none';
-  }
+  document.getElementById('test-toggle').textContent=testMode?'Disable test mode':'Staff test mode';
+  if(testMode)document.getElementById('time-warning').style.display='none';
 }
 
 async function dbGet(path){
-  const r=await fetch(SB_URL+'/rest/v1/'+path,{
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}
-  });
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
   if(!r.ok)throw new Error('DB '+r.status);
   return r.json();
 }
@@ -128,7 +129,7 @@ async function dbPost(data){
   return r.json();
 }
 
-function showStatus(type,icon,title,msg,showReset){
+function showStatus(type,icon,title,msg){
   document.getElementById('checkin-form').style.display='none';
   document.getElementById('loader').style.display='none';
   const box=document.getElementById('status-box');
@@ -136,25 +137,20 @@ function showStatus(type,icon,title,msg,showReset){
   document.getElementById('status-icon').textContent=icon;
   document.getElementById('status-title').textContent=title;
   document.getElementById('status-msg').innerHTML=msg;
-  document.getElementById('reset-btn').style.display=showReset?'block':'none';
-}
-
-function resetForm(){
-  document.getElementById('fin-input').value='';
-  document.getElementById('status-box').style.display='none';
-  document.getElementById('checkin-form').style.display='block';
-  document.getElementById('fin-input').focus();
 }
 
 async function submitCheckin(bypass){
+  const name=document.getElementById('name-input').value.trim();
   const fin4=document.getElementById('fin-input').value.trim().toUpperCase();
-  if(fin4.length!==4){alert('Please enter exactly 4 characters');return;}
+  if(!name){alert('Please enter your name');return;}
+  if(fin4.length!==4){alert('Please enter exactly 4 characters of your FIN');return;}
 
   if(!bypass){
     if(!isWeekday()||!inWindow()){
       showStatus('warning','⏰','Not available now',
-        'Meal collection is only available<br><strong>Monday to Friday, 12pm – 5pm</strong><br><br>'+
-        'দুপুর ১২টা – বিকাল ৫টা (সোমবার থেকে শুক্রবার)',false);
+        '<strong>12pm – 5pm, Monday to Friday only</strong><br><br>'+
+        'দুপুর ১২টা – বিকাল ৫টা (সোমবার–শুক্রবার)<br>'+
+        'மதியம் 12 – மாலை 5 மணி (திங்கள்–வெள்ளி)');
       return;
     }
   }
@@ -166,37 +162,39 @@ async function submitCheckin(bypass){
   try{
     const todayAll=await dbGet('meal_checkins?select=id&checkin_date=eq.'+today);
     if(todayAll.length>=DAILY_CAP){
-      showStatus('warning','🚫','Daily limit reached',
-        'Maximum '+DAILY_CAP+' meals for today has been reached.<br><br>'+
-        'Contact HealthServe CWSS: <strong>+65 6983 6097</strong>',false);
+      showStatus('warning','🚫','Meals full for today',
+        'Today\'s meals have been fully allocated.<br><br>'+
+        'আজকের খাবার শেষ হয়ে গেছে।<br>'+
+        'இன்றைய உணவு முடிந்துவிட்டது।<br><br>'+
+        'Please contact HealthServe CWSS:<br><strong>WhatsApp +65 6983 6097</strong>');
       return;
     }
     const existing=await dbGet('meal_checkins?select=id&fin_last4=eq.'+fin4+'&checkin_date=eq.'+today);
     if(existing.length>0){
-      showStatus('error','❌','Already redeemed today',
-        '<strong>FIN ····'+fin4+'</strong> has already collected a meal today.<br><br>'+
-        'আজ এই FIN দিয়ে ইতিমধ্যে খাবার নেওয়া হয়েছে।<br><br>'+
-        '<small>If this is an error, call +65 6983 6097</small>',false);
+      showStatus('error','❌','Already collected today',
+        '<strong>'+name+'</strong> (FIN ····'+fin4+') has already collected a meal today.<br><br>'+
+        'আজ এই FIN দিয়ে ইতিমধ্যে খাবার নেওয়া হয়েছে।<br>'+
+        'இன்று இந்த FIN-ல் உணவு ஏற்கனவே வழங்கப்பட்டது।<br><br>'+
+        '<small>If this is wrong, WhatsApp HealthServe: <strong>+65 6983 6097</strong></small>');
       return;
     }
     await dbPost({
       fin_last4:fin4,
+      worker_name:name,
       checkin_date:today,
       checkin_time:sgNow().toTimeString().slice(0,8),
       meal_number:todayAll.length+1
     });
-    const mealNum=todayAll.length+1;
     showStatus('success','✅','Meal approved',
-      '<strong>FIN ····'+fin4+'</strong><br>'+
-      (bypass?'<span style="font-size:11px;color:#085041;">TEST MODE</span><br>':'')+
-      'Meal #'+mealNum+' of '+DAILY_CAP+' today<br><br>'+
-      '<strong style="font-size:15px;">Show this screen to collect your meal</strong><br>'+
-      '<span style="color:#085041;font-size:12px;">এই স্ক্রিন দেখিয়ে খাবার নিন</span><br><br>'+
-      '<small style="color:#aaa;">'+today+' &middot; '+sgNow().toTimeString().slice(0,5)+' SG</small>',
-      true);
+      '<strong style="font-size:16px;">'+name+'</strong><br>'+
+      (bypass?'<span style="font-size:11px;background:#085041;color:#fff;padding:1px 8px;border-radius:4px;">TEST</span><br>':'')+
+      '<br><strong style="font-size:18px;">Show this screen to collect your meal</strong><br><br>'+
+      '<span style="color:#085041;">এই স্ক্রিন দেখিয়ে খাবার নিন</span><br>'+
+      '<span style="color:#085041;">இந்த திரையை காட்டி உணவு பெறுங்கள்</span><br><br>'+
+      '<small style="color:#aaa;">'+today+' &middot; '+sgNow().toTimeString().slice(0,5)+' SG</small>');
   }catch(e){
     showStatus('error','⚠️','Connection error',
-      'Could not connect. Please try again.<br><strong>+65 6983 6097</strong>',true);
+      'Please try again.<br>WhatsApp HealthServe: <strong>+65 6983 6097</strong>');
   }
 }
 
