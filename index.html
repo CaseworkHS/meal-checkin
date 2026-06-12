@@ -163,7 +163,7 @@ async function submitCheckin(bypass){
 
   try{
     // Check if FIN is registered
-    const registered=await dbGet('workers?select=id,worker_name,worker_type,active&fin_last4=eq.'+fin4+'&active=eq.true');
+    const registered=await dbGet('workers?select=id,worker_name,worker_type,active&fin_last4=eq.'+fin4+'&active=is.true');
     if(!Array.isArray(registered)||registered.length===0){
       showStatus('notfound','🚫','Not registered',
         'FIN ····'+fin4+' is not registered for the food programme.<br><br>'+
