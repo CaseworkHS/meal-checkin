@@ -119,7 +119,7 @@ function toggleTest(){
 async function dbGet(path){
   try{
     const r=await fetch(SB_URL+'/rest/v1/'+path,{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
     });
     const text=await r.text();
     if(!r.ok)throw new Error('HTTP '+r.status+': '+text.slice(0,120));
@@ -171,7 +171,8 @@ async function submitCheckin(bypass){
 
   try{
     // Check if FIN is registered
-    const registered=await dbGet('workers?select=id,worker_name,worker_type,active&fin_last4=eq.'+encodeURIComponent(fin4)+'&order=created_at.desc&limit=5');
+    const wParams='select=id,worker_name,worker_type,active&fin_last4=eq.'+fin4+'&limit=10';
+    const registered=await dbGet('workers?'+wParams);
     const activeWorkers=Array.isArray(registered)?registered.filter(function(w){return w.active!==false;}):[];
     if(activeWorkers.length===0){
       showStatus('notfound','🚫','Not registered',
