@@ -221,7 +221,7 @@ async function submitCheckin(bypass){
 
   }catch(e){
     showStatus('error','⚠️','Connection error',
-      'Please try again.<br>WhatsApp HealthServe: <strong>+65 6983 6097</strong>');
+      'Error: '+e.message+'<br><br>Please try again.<br>WhatsApp HealthServe: <strong>+65 6983 6097</strong>');
   }
 }
 
