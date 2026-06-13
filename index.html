@@ -170,10 +170,11 @@ async function submitCheckin(bypass){
   const today=sgDate();
 
   try{
-    // Check if FIN is registered
-    const wParams='select=id,worker_name,worker_type,active&fin_last4=eq.'+fin4+'&limit=10';
-    const registered=await dbGet('workers?'+wParams);
-    const activeWorkers=Array.isArray(registered)?registered.filter(function(w){return w.active!==false;}):[];
+    // Check if FIN is registered - fetch all and filter in JS to avoid query issues
+    const allWorkers=await dbGet('workers?select=id,worker_name,worker_type,active,fin_last4&limit=500');
+    const activeWorkers=Array.isArray(allWorkers)?allWorkers.filter(function(w){
+      return w.fin_last4===fin4 && w.active!==false;
+    }):[];
     if(activeWorkers.length===0){
       showStatus('notfound','🚫','Not registered',
         'FIN ····'+fin4+' is not registered for the food programme.<br><br>'+
