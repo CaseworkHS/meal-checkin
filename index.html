@@ -117,9 +117,17 @@ function toggleTest(){
 }
 
 async function dbGet(path){
-  const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
-  if(!r.ok)throw new Error('DB '+r.status);
-  return r.json();
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/'+path,{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}
+    });
+    const text=await r.text();
+    if(!r.ok)throw new Error('HTTP '+r.status+': '+text.slice(0,120));
+    return JSON.parse(text);
+  }catch(err){
+    if(err.message.startsWith('HTTP'))throw err;
+    throw new Error('Network: '+err.message);
+  }
 }
 async function dbPost(table,data){
   const r=await fetch(SB_URL+'/rest/v1/'+table,{
@@ -220,8 +228,8 @@ async function submitCheckin(bypass){
       '<small style="color:#aaa;">'+today+' &middot; '+sgNow().toTimeString().slice(0,5)+' SG</small>');
 
   }catch(e){
-    showStatus('error','⚠️','Connection error',
-      'Error: '+e.message+'<br><br>Please try again.<br>WhatsApp HealthServe: <strong>+65 6983 6097</strong>');
+    showStatus('error','⚠️','Error: '+e.message.slice(0,60),
+      'Please try again or WhatsApp HealthServe: <strong>+65 6983 6097</strong>');
   }
 }
 
