@@ -170,8 +170,10 @@ async function submitCheckin(bypass){
   const today=sgDate();
 
   try{
-    // Check if FIN is registered - fetch all and filter in JS to avoid query issues
-    const allWorkers=await dbGet('workers?select=id,worker_name,worker_type,active,fin_last4&limit=500');
+    // Step 1: Check if FIN is registered
+    let allWorkers;
+    try{ allWorkers=await dbGet('workers?select=*&limit=500'); }
+    catch(e){ throw new Error('Step1-workers: '+e.message); }
     const activeWorkers=Array.isArray(allWorkers)?allWorkers.filter(function(w){
       return w.fin_last4===fin4 && w.active!==false;
     }):[];
@@ -188,7 +190,7 @@ async function submitCheckin(bypass){
     const workerType=activeWorkers[0].worker_type||'Regular';
 
     // Check daily cap
-    const todayAll=await dbGet('meal_checkins?select=id&checkin_date=eq.'+today);
+    let todayAll; try{ todayAll=await dbGet('meal_checkins?select=id&checkin_date=eq.'+today); } catch(e){ throw new Error('Step2-cap: '+e.message); }
     if(todayAll.length>=DAILY_CAP){
       showStatus('warning','🚫','Meals full for today',
         'Today\'s meals have been fully allocated.<br><br>'+
@@ -199,7 +201,7 @@ async function submitCheckin(bypass){
     }
 
     // Check duplicate
-    const existing=await dbGet('meal_checkins?select=id&fin_last4=eq.'+fin4+'&checkin_date=eq.'+today);
+    let existing; try{ existing=await dbGet('meal_checkins?select=id&fin_last4=eq.'+fin4+'&checkin_date=eq.'+today); } catch(e){ throw new Error('Step3-dup: '+e.message); }
     if(existing.length>0){
       showStatus('error','❌','Already collected today',
         '<strong>'+name+'</strong> (FIN ····'+fin4+') has already collected a meal today.<br><br>'+
