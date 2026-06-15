@@ -161,6 +161,7 @@ async function doCheckin(bypass) {
     }
 
     var wtype = match[0].worker_type || 'Regular';
+    var regName = match[0].worker_name || name; // use registered name from DB
 
     // 2. Get all today's checkins and filter in JS
     // Fetch only today's checkins using date filter
@@ -181,7 +182,7 @@ async function doCheckin(bypass) {
     var alreadyEaten = todayCheckins.filter(function(c) { return c.fin_last4 === fin; });
     if (alreadyEaten.length > 0) {
       showStatus('error', '❌', 'Already collected today',
-        '<strong>' + name + '</strong> (FIN \u00B7\u00B7\u00B7\u00B7' + fin + ') already collected a meal today.<br><br>' +
+        '<strong>' + regName + '</strong> (FIN \u00B7\u00B7\u00B7\u00B7' + fin + ') already collected a meal today.<br><br>' +
         'আজ ইতিমধ্যে খাবার নেওয়া হয়েছে।<br>' +
         'இன்று ஏற்கனவே உணவு பெற்றுவிட்டீர்கள்.<br><br>' +
         '<small>Wrong? WhatsApp: +65 6983 6097<br>' +
@@ -209,7 +210,8 @@ async function doCheckin(bypass) {
     }
 
     showStatus('success', '✅', 'Meal approved',
-      '<strong style="font-size:16px;">' + name + '</strong>' +
+      '<strong style="font-size:16px;">' + regName + '</strong>' +
+      (regName !== name ? '<br><small style="color:#888;">Entered: ' + name + '</small>' : '') +
       (bypass ? '<br><span style="font-size:10px;background:#085041;color:#fff;padding:2px 10px;border-radius:4px;">STAFF TEST</span>' : '') +
       '<br><br><strong style="font-size:18px;">Show this screen to collect your meal</strong><br><br>' +
       '<span style="color:#085041;">এই স্ক্রিন দেখিয়ে খাবার নিন</span><br>' +
