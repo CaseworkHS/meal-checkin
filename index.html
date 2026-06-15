@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>HealthServe Meal Check-in</title>
+<title>HealthServe Meal Check-in v8</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:#f5f5f3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
@@ -19,7 +19,6 @@ input{width:100%;font-size:16px;padding:12px 14px;border:1.5px solid #ddd;border
 input#fin-input{font-size:18px;text-align:center;letter-spacing:3px;font-weight:700;text-transform:uppercase;}
 input:focus{outline:none;border-color:#8C0303;}
 .btn{width:100%;font-size:15px;padding:14px;font-weight:700;background:#8C0303;color:#fff;border:none;border-radius:10px;cursor:pointer;margin-top:8px;}
-.btn:active{transform:scale(0.98);}
 .btn-test{width:100%;font-size:12px;padding:9px;font-weight:500;background:#085041;color:#fff;border:none;border-radius:10px;cursor:pointer;margin-top:8px;}
 .status{display:none;border-radius:12px;padding:24px 20px;text-align:center;margin-top:4px;}
 .status.success{background:#E1F5EE;border:2px solid #085041;}
@@ -27,7 +26,7 @@ input:focus{outline:none;border-color:#8C0303;}
 .status.warning{background:#FAEEDA;border:2px solid #854F0B;}
 .status.notfound{background:#F0F0FF;border:2px solid #6B6BBB;}
 .status-icon{font-size:52px;margin-bottom:10px;}
-.status-title{font-size:20px;font-weight:700;margin-bottom:6px;}
+.status-title{font-size:18px;font-weight:700;margin-bottom:6px;}
 .status-msg{font-size:13px;line-height:1.7;}
 .status.success .status-title{color:#085041;}
 .status.error .status-title{color:#A32D2D;}
@@ -49,197 +48,158 @@ input:focus{outline:none;border-color:#8C0303;}
     <div class="hs-badge">CWSS Food Programme</div>
   </div>
 
-  <div class="test-banner" id="test-banner">&#9881; TEST MODE — time restriction bypassed</div>
+  <div class="test-banner" id="test-banner">&#9881; TEST MODE</div>
 
   <div class="time-restrict" id="time-warning" style="display:none;">
-    &#9201; <strong>12pm – 5pm, Monday to Friday only</strong><br>
-    <span style="font-size:11px;">দুপুর ১২টা – বিকাল ৫টা (সোমবার–শুক্রবার)</span><br>
-    <span style="font-size:11px;">மதியம் 12 – மாலை 5 மணி (திங்கள்–வெள்ளி)</span>
+    &#9201; <strong>12pm to 5pm, Monday to Friday only</strong><br>
+    <span style="font-size:11px;">12pm-5pm Mon-Fri | দুপুর ১২-বিকাল ৫ | 12pm-5pm திங்கள்-வெள்ளி</span>
   </div>
 
   <div id="checkin-form">
     <div class="form-group">
       <label>Your full name
-        <div class="label-sub">আপনার পুরো নাম &nbsp;|&nbsp; உங்கள் முழு பெயர்</div>
+        <div class="label-sub">আপনার নাম | உங்கள் பெயர்</div>
       </label>
-      <input type="text" id="name-input" placeholder="e.g. Mohammad Rahman"
-        autocomplete="off" autocorrect="off" spellcheck="false">
+      <input type="text" id="name-input" placeholder="e.g. Mohammad Rahman" autocomplete="off">
     </div>
     <div class="form-group">
-      <label>Last 4 characters of your FIN
-        <div class="label-sub">FIN-এর শেষ ৪টি &nbsp;|&nbsp; FIN கடைசி 4 எழுத்துகள்</div>
+      <label>Last 4 of your FIN
+        <div class="label-sub">FIN শেষ ৪টি | FIN கடைசி 4</div>
       </label>
       <input type="text" id="fin-input" maxlength="4" placeholder="e.g. 662P"
-        autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+        autocomplete="off" autocapitalize="characters">
     </div>
-    <button class="btn" onclick="submitCheckin(false)">Check in for meal &#10003;</button>
-    <button class="btn-test" id="test-btn" onclick="submitCheckin(true)" style="display:none;">
-      &#9881; Staff test — bypass time check
-    </button>
+    <button class="btn" onclick="doCheckin(false)">Check in for meal &#10003;</button>
+    <button class="btn-test" id="test-btn" onclick="doCheckin(true)" style="display:none;">&#9881; Staff test</button>
     <div class="info-row">
       <span>Al-Rich Express &middot; 2 Lor 22 Geylang</span>
       <span id="today-date"></span>
     </div>
   </div>
 
-  <div class="loader" id="loader">&#8987; Checking... please wait</div>
+  <div class="loader" id="loader">Checking...</div>
 
   <div class="status" id="status-box">
-    <div class="status-icon" id="status-icon"></div>
-    <div class="status-title" id="status-title"></div>
-    <div class="status-msg" id="status-msg"></div>
+    <div class="status-icon" id="s-icon"></div>
+    <div class="status-title" id="s-title"></div>
+    <div class="status-msg" id="s-msg"></div>
   </div>
 </div>
 
 <div class="staff-link">
-  <a href="staff.html">Staff view &rarr;</a> &nbsp;|&nbsp;
-  <a href="admin.html">Admin &rarr;</a> &nbsp;|&nbsp;
-  <a href="#" onclick="toggleTest();return false;" id="test-toggle">Staff test mode</a>
+  <a href="staff.html">Staff</a> &nbsp;|&nbsp;
+  <a href="admin.html">Admin</a> &nbsp;|&nbsp;
+  <a href="#" onclick="toggleTest();return false;" id="test-link">Test mode</a>
 </div>
 
 <script>
-const SB_URL='https://mstxqyftlshgwmzrrkyr.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdHhxeWZ0bHNoZ3dtenJya3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODAxMjUsImV4cCI6MjA5Njc1NjEyNX0.6pwUe7fi1xFMuU83oZj7matMBzWiZtJUYl7nS9u6X50';
-const MEAL_START=12,MEAL_END=17,DAILY_CAP=30;
-let testMode=false;
+var SB = 'https://mstxqyftlshgwmzrrkyr.supabase.co/rest/v1/';
+var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdHhxeWZ0bHNoZ3dtenJya3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODAxMjUsImV4cCI6MjA5Njc1NjEyNX0.6pwUe7fi1xFMuU83oZj7matMBzWiZtJUYl7nS9u6X50';
+var CAP = 30;
+var testMode = false;
 
-function sgNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'}));}
-function sgDate(){const d=sgNow();return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');}
-function isWeekday(){const d=sgNow().getDay();return d>=1&&d<=5;}
-function inWindow(){const h=sgNow().getHours();return h>=MEAL_START&&h<MEAL_END;}
+function sgNow(){ return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'})); }
+function sgDate(){ var d=sgNow(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function isWeekday(){ var d=sgNow().getDay(); return d>=1&&d<=5; }
+function inWindow(){ var h=sgNow().getHours(); return h>=12&&h<17; }
+
+function hdrs(){ return {'apikey':KEY,'Authorization':'Bearer '+KEY}; }
+
+function showStatus(type,icon,title,msg){
+  document.getElementById('checkin-form').style.display='none';
+  document.getElementById('loader').style.display='none';
+  var box=document.getElementById('status-box');
+  box.className='status '+type; box.style.display='block';
+  document.getElementById('s-icon').textContent=icon;
+  document.getElementById('s-title').textContent=title;
+  document.getElementById('s-msg').innerHTML=msg;
+}
 
 function toggleTest(){
   testMode=!testMode;
   document.getElementById('test-btn').style.display=testMode?'block':'none';
   document.getElementById('test-banner').style.display=testMode?'block':'none';
-  document.getElementById('test-toggle').textContent=testMode?'Disable test mode':'Staff test mode';
-  if(testMode)document.getElementById('time-warning').style.display='none';
+  document.getElementById('test-link').textContent=testMode?'Disable test':'Test mode';
+  if(testMode) document.getElementById('time-warning').style.display='none';
 }
 
-async function dbGet(path){
-  try{
-    const r=await fetch(SB_URL+'/rest/v1/'+path,{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
-    });
-    const text=await r.text();
-    if(!r.ok)throw new Error('HTTP '+r.status+': '+text.slice(0,120));
-    return JSON.parse(text);
-  }catch(err){
-    if(err.message.startsWith('HTTP'))throw err;
-    throw new Error('Network: '+err.message);
+function doCheckin(bypass){
+  var name=document.getElementById('name-input').value.trim();
+  var fin=document.getElementById('fin-input').value.trim().toUpperCase();
+  if(!name){ alert('Please enter your name'); return; }
+  if(fin.length!==4){ alert('Please enter 4 characters'); return; }
+  if(!bypass && (!isWeekday()||!inWindow())){
+    showStatus('warning','&#9201;','Not available now','<strong>12pm to 5pm, Monday to Friday only</strong><br><br>দুপুর ১২টা থেকে বিকাল ৫টা<br>மதியம் 12 முதல் மாலை 5 வரை');
+    return;
   }
-}
-async function dbPost(table,data){
-  const r=await fetch(SB_URL+'/rest/v1/'+table,{
-    method:'POST',
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
-    body:JSON.stringify(data)
-  });
-  if(!r.ok)throw new Error('DB '+r.status);
-  return r.json();
-}
-
-function showStatus(type,icon,title,msg){
-  document.getElementById('checkin-form').style.display='none';
-  document.getElementById('loader').style.display='none';
-  const box=document.getElementById('status-box');
-  box.className='status '+type;box.style.display='block';
-  document.getElementById('status-icon').textContent=icon;
-  document.getElementById('status-title').textContent=title;
-  document.getElementById('status-msg').innerHTML=msg;
-}
-
-async function submitCheckin(bypass){
-  const name=document.getElementById('name-input').value.trim();
-  const fin4=document.getElementById('fin-input').value.trim().toUpperCase();
-  if(!name){alert('Please enter your name\nঅনুগ্রহ করে আপনার নাম লিখুন');return;}
-  if(fin4.length!==4){alert('Please enter exactly 4 characters of your FIN');return;}
-
-  if(!bypass){
-    if(!isWeekday()||!inWindow()){
-      showStatus('warning','⏰','Not available now',
-        '<strong>12pm – 5pm, Monday to Friday only</strong><br><br>'+
-        'দুপুর ১২টা – বিকাল ৫টা (সোমবার–শুক্রবার)<br>'+
-        'மதியம் 12 – மாலை 5 மணி (திங்கள்–வெள்ளி)');
-      return;
-    }
-  }
-
   document.getElementById('checkin-form').style.display='none';
   document.getElementById('loader').style.display='block';
-  const today=sgDate();
+  var today=sgDate();
 
-  try{
-    // Step 1: Check if FIN is registered
-    let allWorkers;
-    try{ allWorkers=await dbGet('workers?select=*&limit=500'); }
-    catch(e){ throw new Error('Step1-workers: '+e.message); }
-    const activeWorkers=Array.isArray(allWorkers)?allWorkers.filter(function(w){
-      return w.fin_last4===fin4 && w.active!==false;
-    }):[];
-    if(activeWorkers.length===0){
-      showStatus('notfound','🚫','Not registered',
-        'FIN ····'+fin4+' is not registered for the food programme.<br><br>'+
-        'এই FIN নিবন্ধিত নয়। অনুগ্রহ করে CWSS অফিসে আসুন।<br>'+
-        'இந்த FIN பதிவு செய்யப்படவில்லை. CWSS அலுவலகத்திற்கு வாருங்கள்.<br><br>'+
-        '<strong>Please visit the HealthServe CWSS office</strong><br>'+
-        'or WhatsApp: <strong>+65 6983 6097</strong>');
+  // Step 1: check worker registered
+  fetch(SB+'workers?select=worker_name,worker_type,active,fin_last4', {headers:hdrs()})
+  .then(function(r){ return r.json(); })
+  .then(function(workers){
+    var match=workers.filter(function(w){ return w.fin_last4===fin && w.active!==false; });
+    if(match.length===0){
+      showStatus('notfound','&#128683;','Not registered',
+        'FIN &#xB7;&#xB7;&#xB7;&#xB7;'+fin+' is not registered.<br><br>'+
+        'অনুগ্রহ করে CWSS অফিসে আসুন।<br>CWSS அலுவலகத்திற்கு வாருங்கள்.<br><br>'+
+        'WhatsApp: <strong>+65 6983 6097</strong>');
       return;
     }
+    var wtype=match[0].worker_type||'Regular';
 
-    const workerType=activeWorkers[0].worker_type||'Regular';
+    // Step 2: check cap
+    fetch(SB+'meal_checkins?select=id&checkin_date=eq.'+today, {headers:hdrs()})
+    .then(function(r){ return r.json(); })
+    .then(function(todayMeals){
+      if(todayMeals.length>=CAP){
+        showStatus('warning','&#128683;','Daily limit reached',
+          'Today\'s meals are fully allocated.<br><br>আজকের খাবার শেষ।<br>WhatsApp: <strong>+65 6983 6097</strong>');
+        return;
+      }
 
-    // Check daily cap
-    let todayAll; try{ todayAll=await dbGet('meal_checkins?select=id&checkin_date=eq.'+today); } catch(e){ throw new Error('Step2-cap: '+e.message); }
-    if(todayAll.length>=DAILY_CAP){
-      showStatus('warning','🚫','Meals full for today',
-        'Today\'s meals have been fully allocated.<br><br>'+
-        'আজকের খাবার শেষ হয়ে গেছে।<br>'+
-        'இன்றைய உணவு முடிந்துவிட்டது।<br><br>'+
-        'Please WhatsApp HealthServe CWSS:<br><strong>+65 6983 6097</strong>');
-      return;
-    }
+      // Step 3: check duplicate
+      fetch(SB+'meal_checkins?select=id&fin_last4=eq.'+fin+'&checkin_date=eq.'+today, {headers:hdrs()})
+      .then(function(r){ return r.json(); })
+      .then(function(existing){
+        if(existing.length>0){
+          showStatus('error','&#10060;','Already collected today',
+            '<strong>'+name+'</strong> (FIN &#xB7;&#xB7;&#xB7;&#xB7;'+fin+') already collected a meal today.<br><br>'+
+            'আজ ইতিমধ্যে খাবার নেওয়া হয়েছে।<br>'+
+            'இன்று ஏற்கனவே உணவு பெற்றுவிட்டீர்கள்.<br><br>'+
+            '<small>Wrong? WhatsApp: +65 6983 6097</small>');
+          return;
+        }
 
-    // Check duplicate
-    let existing; try{ existing=await dbGet('meal_checkins?select=id&fin_last4=eq.'+fin4+'&checkin_date=eq.'+today); } catch(e){ throw new Error('Step3-dup: '+e.message); }
-    if(existing.length>0){
-      showStatus('error','❌','Already collected today',
-        '<strong>'+name+'</strong> (FIN ····'+fin4+') has already collected a meal today.<br><br>'+
-        'আজ এই FIN দিয়ে ইতিমধ্যে খাবার নেওয়া হয়েছে।<br>'+
-        'இன்று இந்த FIN-ல் உணவு ஏற்கனவே வழங்கப்பட்டது।<br><br>'+
-        '<small>If wrong, WhatsApp: <strong>+65 6983 6097</strong><br>'+
-        'ভুল হলে WhatsApp করুন: +65 6983 6097<br>'+
-        'தவறெனில் WhatsApp செய்யுங்கள்: +65 6983 6097</small>');
-      return;
-    }
-
-    // Log redemption
-    await dbPost('meal_checkins',{
-      fin_last4:fin4,
-      worker_name:name,
-      worker_type:workerType,
-      checkin_date:today,
-      checkin_time:sgNow().toTimeString().slice(0,8),
-      meal_number:todayAll.length+1
-    });
-
-    showStatus('success','✅','Meal approved',
-      '<strong style="font-size:16px;">'+name+'</strong><br>'+
-      (bypass?'<span style="font-size:11px;background:#085041;color:#fff;padding:1px 8px;border-radius:4px;margin-bottom:4px;display:inline-block;">TEST</span><br>':'')+
-      '<br><strong style="font-size:18px;">Show this screen to collect your meal</strong><br><br>'+
-      '<span style="color:#085041;">এই স্ক্রিন দেখিয়ে খাবার নিন</span><br>'+
-      '<span style="color:#085041;">இந்த திரையை காட்டி உணவு பெறுங்கள்</span><br><br>'+
-      '<small style="color:#aaa;">'+today+' &middot; '+sgNow().toTimeString().slice(0,5)+' SG</small>');
-
-  }catch(e){
-    showStatus('error','⚠️','Error: '+e.message.slice(0,60),
-      'Please try again or WhatsApp HealthServe: <strong>+65 6983 6097</strong>');
-  }
+        // Step 4: log it
+        fetch(SB+'meal_checkins', {
+          method:'POST',
+          headers:Object.assign({},hdrs(),{'Content-Type':'application/json','Prefer':'return=representation'}),
+          body:JSON.stringify({fin_last4:fin,worker_name:name,worker_type:wtype,checkin_date:today,checkin_time:sgNow().toTimeString().slice(0,8),meal_number:todayMeals.length+1})
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(){
+          showStatus('success','&#9989;','Meal approved',
+            '<strong style="font-size:16px;">'+name+'</strong>'+(bypass?'<br><span style="font-size:11px;background:#085041;color:#fff;padding:1px 8px;border-radius:4px;">TEST</span>':'')+
+            '<br><br><strong style="font-size:18px;">Show this screen to collect your meal</strong><br><br>'+
+            '<span style="color:#085041;">এই স্ক্রিন দেখিয়ে খাবার নিন</span><br>'+
+            '<span style="color:#085041;">இந்த திரையை காட்டி உணவு பெறுங்கள்</span><br><br>'+
+            '<small style="color:#aaa;">'+today+' &middot; '+sgNow().toTimeString().slice(0,5)+'</small>');
+        })
+        .catch(function(e){ showStatus('error','&#9888;','Error saving: '+e.message,'Please try again. WhatsApp: <strong>+65 6983 6097</strong>'); });
+      })
+      .catch(function(e){ showStatus('error','&#9888;','Error checking duplicate: '+e.message,'Please try again.'); });
+    })
+    .catch(function(e){ showStatus('error','&#9888;','Error checking cap: '+e.message,'Please try again.'); });
+  })
+  .catch(function(e){ showStatus('error','&#9888;','Error checking registration: '+e.message,'Please try again. WhatsApp: <strong>+65 6983 6097</strong>'); });
 }
 
 document.getElementById('today-date').textContent=sgNow().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-document.getElementById('fin-input').addEventListener('keypress',e=>{if(e.key==='Enter')submitCheckin(false);});
-if(!isWeekday()||!inWindow())document.getElementById('time-warning').style.display='block';
+document.getElementById('fin-input').addEventListener('keypress',function(e){if(e.key==='Enter')doCheckin(false);});
+if(!isWeekday()||!inWindow()) document.getElementById('time-warning').style.display='block';
 </script>
 </body>
 </html>
