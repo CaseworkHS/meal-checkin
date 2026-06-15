@@ -198,7 +198,6 @@ async function doCheckin(bypass) {
       body: JSON.stringify({
         fin_last4: fin,
         worker_name: name,
-        worker_type: wtype,
         checkin_date: today,
         checkin_time: now.toTimeString().slice(0, 8),
         meal_number: todayCheckins.length + 1
