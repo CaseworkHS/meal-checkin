@@ -163,9 +163,10 @@ async function doCheckin(bypass) {
     var wtype = match[0].worker_type || 'Regular';
 
     // 2. Get all today's checkins and filter in JS
-    var cResp = await fetch(SB + 'meal_checkins?select=id,fin_last4,checkin_date&limit=500', {headers: hdrs()});
+    // Fetch only today's checkins using date filter
+    var cResp = await fetch(SB + 'meal_checkins?select=id,fin_last4,checkin_date&checkin_date=gte.' + today + '&limit=200', {headers: hdrs()});
     var allCheckins = await cResp.json();
-    var todayCheckins = allCheckins.filter(function(c) { return c.checkin_date === today; });
+    var todayCheckins = Array.isArray(allCheckins) ? allCheckins.filter(function(c) { return c.checkin_date === today; }) : [];
 
     if (todayCheckins.length >= CAP) {
       showStatus('warning', '🚫', 'Daily limit reached',
@@ -210,7 +211,7 @@ async function doCheckin(bypass) {
       '<br><br><strong style="font-size:18px;">Show this screen to collect your meal</strong><br><br>' +
       '<span style="color:#085041;">এই স্ক্রিন দেখিয়ে খাবার নিন</span><br>' +
       '<span style="color:#085041;">இந்த திரையை காட்டி உணவு பெறுங்கள்</span><br><br>' +
-      '<small style="color:#aaa;">' + today + ' \u00B7 ' + now.toTimeString().slice(0, 5) + ' SG</small>');
+      '<small style="color:#aaa;">' + today + ' \u00B7 ' + now.toTimeString().slice(0, 5) + ' SG \u00B7 Meal #' + (todayCheckins.length + 1) + '</small>');
 
   } catch(e) {
     showStatus('error', '⚠️', 'Connection error',
