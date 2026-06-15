@@ -92,6 +92,7 @@ input:focus,select:focus{outline:none;border-color:#8C0303;}
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('workers')">Worker list</button>
     <button class="tab-btn" onclick="switchTab('add')">Add worker</button>
+    <button class="tab-btn" onclick="switchTab('bulk')">Bulk upload</button>
   </div>
 
   <!-- WORKER LIST TAB -->
@@ -173,6 +174,48 @@ input:focus,select:focus{outline:none;border-color:#8C0303;}
       </div>
     </div>
   </div>
+
+  <!-- BULK UPLOAD TAB -->
+  <div id="tab-bulk" class="tab-panel">
+    <div class="panel">
+      <h3>Bulk upload from Zoho export</h3>
+      <div style="background:#E1F5EE;border:1px solid #085041;border-radius:6px;padding:10px 12px;font-size:12px;color:#085041;margin-bottom:12px;line-height:1.7;">
+        <strong>How to use:</strong><br>
+        1. Export workers from Zoho: Full Name, FIN No., Nationality<br>
+        2. Open the export in Excel<br>
+        3. Select all rows (no header), copy (Cmd+C)<br>
+        4. Paste below and click Upload
+      </div>
+      <label>Paste worker data (tab-separated, 3 columns: Name, FIN, Nationality)</label>
+      <textarea id="bulk-input" rows="12" style="width:100%;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:7px;font-family:monospace;" placeholder="AHAMMAD MOHAMMAD RIAJ&#9;G2604662P&#9;Bangladeshi&#10;AKHON SAKIL&#9;G2327077W&#9;Bangladeshi&#10;BALWAN SINGH&#9;G2115480L&#9;Indian"></textarea>
+      <div class="form-grid" style="margin-top:8px;">
+        <div>
+          <label>Default worker type</label>
+          <select id="bulk-type">
+            <option value="Regular">Regular</option>
+            <option value="New">New worker</option>
+          </select>
+        </div>
+        <div>
+          <label>Added by</label>
+          <select id="bulk-by">
+            <option>Durga</option><option>Daniel</option><option>Bobby</option>
+            <option>Tanin</option><option>Sudipta</option><option>Tanushree</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn primary" onclick="bulkUpload()">Upload all workers</button>
+      <div class="msg" id="bulk-msg"></div>
+      <div id="bulk-progress" style="display:none;margin-top:10px;">
+        <div style="font-size:12px;color:#555;margin-bottom:6px;" id="bulk-progress-text">Uploading...</div>
+        <div style="height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;">
+          <div id="bulk-progress-bar" style="height:100%;background:#8C0303;border-radius:4px;width:0%;transition:width 0.3s;"></div>
+        </div>
+        <div id="bulk-log" style="margin-top:8px;max-height:200px;overflow-y:auto;font-size:11px;font-family:monospace;color:#555;"></div>
+      </div>
+    </div>
+  </div>
+
 
 </div>
 
@@ -345,6 +388,77 @@ async function addWorker(){
     msg.textContent='Error adding worker: '+e.message;
   }
 }
+
+// Bulk upload
+async function bulkUpload(){
+  var raw=document.getElementById('bulk-input').value.trim();
+  var wtype=document.getElementById('bulk-type').value;
+  var addedBy=document.getElementById('bulk-by').value;
+  var msg=document.getElementById('bulk-msg');
+  var today=new Date().toISOString().slice(0,10);
+
+  if(!raw){ msg.className='msg error';msg.style.display='block';msg.textContent='Please paste worker data first.';return; }
+
+  var lines=raw.split('\n').filter(function(l){return l.trim();});
+  if(lines.length===0){ msg.className='msg error';msg.style.display='block';msg.textContent='No valid rows found.';return; }
+
+  // Parse rows
+  var rows=[];
+  var skipped=[];
+  lines.forEach(function(line){
+    var parts=line.split('\t');
+    if(parts.length<2){ skipped.push('Skipped (too few columns): '+line.slice(0,40)); return; }
+    var name=parts[0].trim().toUpperCase();
+    var fin=parts[1].trim().toUpperCase();
+    var nat=parts.length>2?parts[2].trim():'Bangladeshi';
+    var fin4=fin.slice(-4);
+    if(!name||fin4.length!==4){ skipped.push('Skipped (invalid): '+line.slice(0,40)); return; }
+    // Check duplicate in current list
+    var isDup=allWorkers.some(function(w){return w.fin_last4===fin4&&w.active!==false;});
+    if(isDup){ skipped.push('Skipped (already exists): '+name+' ('+fin4+')'); return; }
+    rows.push({worker_name:name,fin_last4:fin4,nationality:nat,worker_type:wtype,added_by:addedBy,date_added:today,active:true});
+  });
+
+  if(rows.length===0){
+    msg.className='msg error';msg.style.display='block';
+    msg.textContent='No new workers to add. '+skipped.length+' rows skipped.';
+    return;
+  }
+
+  msg.style.display='none';
+  var progress=document.getElementById('bulk-progress');
+  var progressText=document.getElementById('bulk-progress-text');
+  var progressBar=document.getElementById('bulk-progress-bar');
+  var log=document.getElementById('bulk-log');
+  progress.style.display='block';
+  log.innerHTML='';
+
+  var added=0,failed=0;
+  for(var i=0;i<rows.length;i++){
+    progressText.textContent='Uploading '+( i+1)+' of '+rows.length+'...';
+    progressBar.style.width=((i+1)/rows.length*100)+'%';
+    try{
+      await dbPost('workers',rows[i]);
+      added++;
+      log.innerHTML+='<div style="color:#085041;">✓ '+rows[i].worker_name+' ('+rows[i].fin_last4+')</div>';
+    }catch(e){
+      failed++;
+      log.innerHTML+='<div style="color:#A32D2D;">✗ '+rows[i].worker_name+': '+e.message+'</div>';
+    }
+    log.scrollTop=log.scrollHeight;
+    await new Promise(function(r){setTimeout(r,100);});
+  }
+
+  skipped.forEach(function(s){ log.innerHTML+='<div style="color:#888;">'+s+'</div>'; });
+
+  progressText.textContent='Done: '+added+' added, '+failed+' failed, '+skipped.length+' skipped.';
+  progressBar.style.background=failed>0?'#ECC11C':'#085041';
+  msg.className='msg success';msg.style.display='block';
+  msg.textContent=added+' workers added successfully'+( failed>0?' ('+failed+' failed)':'')+'.';
+  document.getElementById('bulk-input').value='';
+  await loadWorkers();
+}
+
 </script>
 </body>
 </html>
