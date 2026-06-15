@@ -151,19 +151,20 @@ function doCheckin(bypass){
     var wtype=match[0].worker_type||'Regular';
 
     // Step 2: check cap
-    fetch(SB+'meal_checkins?select=id&checkin_date=eq.'+today, {headers:hdrs()})
+    fetch(SB+'meal_checkins?select=id,fin_last4,checkin_date&limit=500', {headers:hdrs()})
     .then(function(r){ return r.json(); })
-    .then(function(todayMeals){
+    .then(function(allMeals){
+      var todayMeals=Array.isArray(allMeals)?allMeals.filter(function(m){return m.checkin_date===today;}):[]; 
       if(todayMeals.length>=CAP){
         showStatus('warning','🚫','Daily limit reached',
           'Today\'s meals are fully allocated.<br><br>আজকের খাবার শেষ।<br>WhatsApp: <strong>+65 6983 6097</strong>');
         return;
       }
 
-      // Step 3: check duplicate
-      fetch(SB+'meal_checkins?select=id&fin_last4=eq.'+fin+'&checkin_date=eq.'+today, {headers:hdrs()})
-      .then(function(r){ return r.json(); })
-      .then(function(existing){
+      // Step 3: check duplicate - filter from todayMeals already fetched
+      var existing=todayMeals.filter(function(m){return m.fin_last4===fin;});
+      (function(){
+      Promise.resolve().then(function(){
         if(existing.length>0){
           showStatus('error','❌','Already collected today',
             '<strong>'+name+'</strong> (FIN &#xB7;&#xB7;&#xB7;&#xB7;'+fin+') already collected a meal today.<br><br>'+
@@ -190,7 +191,7 @@ function doCheckin(bypass){
         })
         .catch(function(e){ showStatus('error','⚠️','Error saving: '+e.message,'Please try again. WhatsApp: <strong>+65 6983 6097</strong>'); });
       })
-      .catch(function(e){ showStatus('error','⚠️','Error checking duplicate: '+e.message,'Please try again.'); });
+      }).catch(function(e){ showStatus('error','⚠️','Error: '+e.message,'Please try again.'); }); })();
     })
     .catch(function(e){ showStatus('error','⚠️','Error checking cap: '+e.message,'Please try again.'); });
   })
