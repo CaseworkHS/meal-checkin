@@ -129,7 +129,7 @@ function doCheckin(bypass){
   if(!name){ alert('Please enter your name'); return; }
   if(fin.length!==4){ alert('Please enter 4 characters'); return; }
   if(!bypass && (!isWeekday()||!inWindow())){
-    showStatus('warning','&#9201;','Not available now','<strong>12pm to 5pm, Monday to Friday only</strong><br><br>দুপুর ১২টা থেকে বিকাল ৫টা<br>மதியம் 12 முதல் மாலை 5 வரை');
+    showStatus('warning','⏰','Not available now','<strong>12pm to 5pm, Monday to Friday only</strong><br><br>দুপুর ১২টা থেকে বিকাল ৫টা<br>மதியம் 12 முதல் மாலை 5 வரை');
     return;
   }
   document.getElementById('checkin-form').style.display='none';
@@ -142,7 +142,7 @@ function doCheckin(bypass){
   .then(function(workers){
     var match=workers.filter(function(w){ return w.fin_last4===fin && w.active!==false; });
     if(match.length===0){
-      showStatus('notfound','&#128683;','Not registered',
+      showStatus('notfound','🚫','Not registered',
         'FIN &#xB7;&#xB7;&#xB7;&#xB7;'+fin+' is not registered.<br><br>'+
         'অনুগ্রহ করে CWSS অফিসে আসুন।<br>CWSS அலுவலகத்திற்கு வாருங்கள்.<br><br>'+
         'WhatsApp: <strong>+65 6983 6097</strong>');
@@ -155,7 +155,7 @@ function doCheckin(bypass){
     .then(function(r){ return r.json(); })
     .then(function(todayMeals){
       if(todayMeals.length>=CAP){
-        showStatus('warning','&#128683;','Daily limit reached',
+        showStatus('warning','🚫','Daily limit reached',
           'Today\'s meals are fully allocated.<br><br>আজকের খাবার শেষ।<br>WhatsApp: <strong>+65 6983 6097</strong>');
         return;
       }
@@ -165,7 +165,7 @@ function doCheckin(bypass){
       .then(function(r){ return r.json(); })
       .then(function(existing){
         if(existing.length>0){
-          showStatus('error','&#10060;','Already collected today',
+          showStatus('error','❌','Already collected today',
             '<strong>'+name+'</strong> (FIN &#xB7;&#xB7;&#xB7;&#xB7;'+fin+') already collected a meal today.<br><br>'+
             'আজ ইতিমধ্যে খাবার নেওয়া হয়েছে।<br>'+
             'இன்று ஏற்கனவே உணவு பெற்றுவிட்டீர்கள்.<br><br>'+
@@ -181,20 +181,20 @@ function doCheckin(bypass){
         })
         .then(function(r){ return r.json(); })
         .then(function(){
-          showStatus('success','&#9989;','Meal approved',
-            '<strong style="font-size:16px;">'+name+'</strong>'+(bypass?'<br><span style="font-size:11px;background:#085041;color:#fff;padding:1px 8px;border-radius:4px;">TEST</span>':'')+
+          showStatus('success','✅','Meal approved',
+            '<strong style="font-size:16px;">'+name+'</strong>'+(bypass?'<br><span style="font-size:10px;background:#085041;color:#fff;padding:2px 10px;border-radius:4px;">STAFF TEST</span>':'')+
             '<br><br><strong style="font-size:18px;">Show this screen to collect your meal</strong><br><br>'+
             '<span style="color:#085041;">এই স্ক্রিন দেখিয়ে খাবার নিন</span><br>'+
             '<span style="color:#085041;">இந்த திரையை காட்டி உணவு பெறுங்கள்</span><br><br>'+
             '<small style="color:#aaa;">'+today+' &middot; '+sgNow().toTimeString().slice(0,5)+'</small>');
         })
-        .catch(function(e){ showStatus('error','&#9888;','Error saving: '+e.message,'Please try again. WhatsApp: <strong>+65 6983 6097</strong>'); });
+        .catch(function(e){ showStatus('error','⚠️','Error saving: '+e.message,'Please try again. WhatsApp: <strong>+65 6983 6097</strong>'); });
       })
-      .catch(function(e){ showStatus('error','&#9888;','Error checking duplicate: '+e.message,'Please try again.'); });
+      .catch(function(e){ showStatus('error','⚠️','Error checking duplicate: '+e.message,'Please try again.'); });
     })
-    .catch(function(e){ showStatus('error','&#9888;','Error checking cap: '+e.message,'Please try again.'); });
+    .catch(function(e){ showStatus('error','⚠️','Error checking cap: '+e.message,'Please try again.'); });
   })
-  .catch(function(e){ showStatus('error','&#9888;','Error checking registration: '+e.message,'Please try again. WhatsApp: <strong>+65 6983 6097</strong>'); });
+  .catch(function(e){ showStatus('error','⚠️','Error checking registration: '+e.message,'Please try again. WhatsApp: <strong>+65 6983 6097</strong>'); });
 }
 
 document.getElementById('today-date').textContent=sgNow().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
