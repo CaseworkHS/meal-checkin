@@ -164,7 +164,7 @@ async function doCheckin(bypass) {
 
     // 2. Get all today's checkins and filter in JS
     // Fetch only today's checkins using date filter
-    var cResp = await fetch(SB + 'meal_checkins?select=id,fin_last4,checkin_date&checkin_date=gte.' + today + '&limit=200', {headers: hdrs()});
+    var cResp = await fetch(SB + 'meal_checkins?select=id,fin_last4,checkin_date&order=created_at.desc&limit=200', {headers: hdrs()});
     var allCheckins = await cResp.json();
     var todayCheckins = Array.isArray(allCheckins) ? allCheckins.filter(function(c) { return c.checkin_date === today; }) : [];
 
@@ -192,9 +192,9 @@ async function doCheckin(bypass) {
 
     // 4. Log the meal
     var now = sgNow();
-    await fetch(SB + 'meal_checkins', {
+    var postResp = await fetch(SB + 'meal_checkins', {
       method: 'POST',
-      headers: Object.assign({}, hdrs(), {'Content-Type': 'application/json', 'Prefer': 'return=minimal'}),
+      headers: Object.assign({}, hdrs(), {'Content-Type': 'application/json', 'Prefer': 'return=representation'}),
       body: JSON.stringify({
         fin_last4: fin,
         worker_name: name,
@@ -204,6 +204,10 @@ async function doCheckin(bypass) {
         meal_number: todayCheckins.length + 1
       })
     });
+    if (!postResp.ok) {
+      var postErr = await postResp.text();
+      throw new Error('Save failed ' + postResp.status + ': ' + postErr.slice(0, 100));
+    }
 
     showStatus('success', '✅', 'Meal approved',
       '<strong style="font-size:16px;">' + name + '</strong>' +

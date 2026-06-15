@@ -101,7 +101,7 @@ async function loadData(){
   document.getElementById('date-filter').value=today;
   document.getElementById('refresh-time').textContent='Last refreshed: '+sgNow().toTimeString().slice(0,8);
   try{
-    const data=await dbGet('meal_checkins?select=*&checkin_date=eq.'+today+'&order=checkin_time.asc');
+    const data=await dbGet('meal_checkins?select=*&checkin_date=gte.'+today+'&order=checkin_time.asc');
     allData=Array.isArray(data)?data:[];
     updateStats(allData);
     renderTable(allData);
