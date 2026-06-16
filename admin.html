@@ -341,7 +341,7 @@ var currentCardType = 'walkin';
 var CARD_NOTES = {
   walkin: 'Worker visits CWSS office without phone → Needs food coupon → CW writes name + FIN last 4 + date on coupon → Worker shows coupon + Special Pass at Al-Rich → Vendor collects coupon, serves meal.',
   event: 'For special events separate from the Al-Rich daily programme. CW writes name + FIN last 4 + date and gives coupon → Worker shows coupon + Special Pass at event → Staff collects coupon, serves meal. Keep a copy for records.'
-};
+}
 
 var CARD_TITLES = {
   walkin: 'Walk-in Meal Coupon \u2014 Blank Stack',
@@ -349,8 +349,8 @@ var CARD_TITLES = {
 };
 
 var CARD_DESCS = {
-  walkin: 'Blank cards for workers without phones. Print a stack, keep at front desk. Write name, FIN last 4, and date by hand when worker visits.',
-  event: 'Blank cards for special event meals (workshops, activities, outreach days). Separate from the Al-Rich daily food programme. Write worker name and event date.'
+  walkin: 'Blank coupons for workers without phones. Print a stack, keep at front desk. CW writes name, FIN last 4, and date when worker visits office.',
+  event: 'Blank coupons for special event meals. CW writes name, FIN last 4, and event date. Separate from the Al-Rich daily programme.'
 };
 
 function setCardType(type) {
@@ -465,81 +465,80 @@ function printCards() {
   var badgeText = isEvent ? 'Event Meal Coupon' : 'Walk-in Coupon';
   var dateLabel = isEvent ? 'EVENT DATE' : 'DATE';
   var venueText = isEvent ? 'HealthServe Event' : 'Al-Rich Express, 2 Lor 22 Geylang';
-  var hoursText = isEvent ? '' : '12pm–7pm only';
+  var hoursText = isEvent ? '' : '12pm\u20137pm only';
   var stripText = isEvent
-    ? 'EVENT MEAL COUPON · Show Special Pass + this coupon · Staff collects coupon'
-    : 'Show Special Pass + this coupon · 1 meal only · Vendor to collect this coupon';
+    ? 'EVENT MEAL COUPON \u00B7 Show Special Pass + this coupon \u00B7 Staff collects coupon'
+    : 'Show Special Pass + this coupon \u00B7 1 meal only \u00B7 Vendor to collect this coupon';
   var noteText = isEvent
-    ? '<strong>Event meal coupon:</strong> CW writes name + FIN last 4 + event date → Worker shows coupon + Special Pass at event → Staff collects coupon, serves meal. Keep a copy for records.'
-    : '<strong>Walk-in food coupon:</strong> Worker visits CWSS office without phone → CW writes name + FIN last 4 + date → Worker shows coupon + Special Pass at Al-Rich → Vendor collects coupon, serves meal.';
+    ? '<strong>Event meal coupon:</strong> CW writes name + FIN last 4 + event date and gives coupon. Worker shows coupon + Special Pass at event. Staff collects coupon, serves meal. Keep a copy for records.'
+    : '<strong>Walk-in food coupon:</strong> Worker visits CWSS office without phone. CW writes name + FIN last 4 + date. Worker shows coupon + Special Pass at Al-Rich. Vendor collects coupon, serves meal.';
   var titleText = isEvent ? 'Event Meal Coupon' : 'Walk-in Food Coupon';
+  var cols = copies <= 2 ? 2 : 3;
 
   function oneCard() {
-    var extraField = isEvent ? (
-      '<div style="margin-bottom:4mm;">' +
-        '<div style="font-size:6pt;color:#888;font-weight:600;letter-spacing:0.05em;margin-bottom:1.5mm;">EVENT / ACTIVITY NAME</div>' +
-        '<div style="border-bottom:1pt solid #1a1a1a;min-height:5mm;"></div>' +
-      '</div>'
-    ) : '';
-    return (
-      '<div style="width:85mm;border:1.5pt solid ' + headColor + ';border-radius:3mm;overflow:hidden;font-family:Arial,sans-serif;background:#fff;page-break-inside:avoid;display:flex;flex-direction:column;box-sizing:border-box;">' +
-        '<div style="background:' + headColor + ';padding:3mm 4mm 2.5mm;display:flex;justify-content:space-between;align-items:flex-start;">' +
+    return '<div style="border:1.5pt solid ' + headColor + ';border-radius:3mm;overflow:hidden;font-family:Arial,sans-serif;background:#ffffff;page-break-inside:avoid;display:flex;flex-direction:column;">' +
+      '<div style="background:' + headColor + ';padding:3mm 4mm 2.5mm;display:flex;justify-content:space-between;align-items:flex-start;">' +
+        '<div>' +
+          '<div style="color:#ffffff;font-size:8pt;font-weight:bold;line-height:1.2;margin:0;padding:0;">HealthServe</div>' +
+          '<div style="color:rgba(255,255,255,0.65);font-size:5pt;margin-top:0.5mm;">healing, inspiring &amp; bridging communities</div>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.2);color:#ffffff;font-size:5.5pt;padding:1mm 2.5mm;border-radius:2mm;font-weight:bold;white-space:nowrap;">' + badgeText + '</div>' +
+      '</div>' +
+      '<div style="padding:3mm 4mm;display:flex;flex-direction:column;gap:2.5mm;flex:1;">' +
+        '<div>' +
+          '<div style="font-size:6pt;color:#888888;font-weight:bold;letter-spacing:0.05em;margin-bottom:1.5mm;text-transform:uppercase;">Worker Name</div>' +
+          '<div style="border-bottom:1pt solid #1a1a1a;min-height:7mm;width:100%;"></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;">' +
           '<div>' +
-            '<div style="color:#fff;font-size:8pt;font-weight:700;line-height:1.2;">HealthServe</div>' +
-            '<div style="color:rgba(255,255,255,0.6);font-size:5pt;margin-top:0.5mm;">healing, inspiring &amp; bridging communities</div>' +
+            '<div style="font-size:6pt;color:#888888;font-weight:bold;letter-spacing:0.05em;margin-bottom:1.5mm;text-transform:uppercase;">FIN Last 4</div>' +
+            '<div style="border-bottom:1pt solid #1a1a1a;min-height:6mm;"></div>' +
           '</div>' +
-          '<div style="background:rgba(255,255,255,0.2);color:#fff;font-size:5.5pt;padding:1mm 2.5mm;border-radius:2mm;font-weight:700;white-space:nowrap;">' + badgeText + '</div>' +
-        '</div>' +
-        '<div style="padding:3mm 4mm;display:flex;flex-direction:column;gap:2.5mm;flex:1;">' +
           '<div>' +
-            '<div style="font-size:6pt;color:#888;font-weight:600;letter-spacing:0.05em;margin-bottom:1.5mm;">WORKER NAME</div>' +
-            '<div style="border-bottom:1pt solid #1a1a1a;min-height:7mm;width:100%;"></div>' +
-          '</div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;">' +
-            '<div>' +
-              '<div style="font-size:6pt;color:#888;font-weight:600;letter-spacing:0.05em;margin-bottom:1.5mm;">FIN LAST 4</div>' +
-              '<div style="border-bottom:1pt solid #1a1a1a;min-height:6mm;"></div>' +
-            '</div>' +
-            '<div>' +
-              '<div style="font-size:6pt;color:#888;font-weight:600;letter-spacing:0.05em;margin-bottom:1.5mm;">' + dateLabel + '</div>' +
-              '<div style="border-bottom:1pt solid #1a1a1a;min-height:6mm;"></div>' +
-            '</div>' +
-          '</div>' +
-          extraField +
-          '<div style="font-size:5pt;color:#777;">' +
-            '<span style="margin-right:4mm;">► ' + venueText + '</span>' +
-            (hoursText ? '<span>' + hoursText + '</span>' : '') +
+            '<div style="font-size:6pt;color:#888888;font-weight:bold;letter-spacing:0.05em;margin-bottom:1.5mm;text-transform:uppercase;">' + dateLabel + '</div>' +
+            '<div style="border-bottom:1pt solid #1a1a1a;min-height:6mm;"></div>' +
           '</div>' +
         '</div>' +
-        '<div style="background:' + stripBg + ';border-top:0.5pt solid ' + stripBorder + ';padding:1.5mm 4mm;font-size:5.5pt;font-weight:700;text-align:center;color:' + stripColor + ';line-height:1.4;">' + stripText + '</div>' +
-        '<div style="background:#fafafa;border-top:0.5pt solid #eee;padding:1.5mm 4mm;display:flex;justify-content:space-between;align-items:center;">' +
-          '<div style="font-size:5pt;color:#aaa;line-height:1.5;">Show Special Pass + this coupon<br>CWSS: +65 6983 6097</div>' +
-          '<div style="font-size:5pt;color:' + headColor + ';font-weight:700;text-align:right;line-height:1.5;">HealthServe CWSS<br>Food Programme</div>' +
+        (isEvent ?
+          '<div>' +
+            '<div style="font-size:6pt;color:#888888;font-weight:bold;letter-spacing:0.05em;margin-bottom:1.5mm;text-transform:uppercase;">Event / Activity Name</div>' +
+            '<div style="border-bottom:1pt solid #1a1a1a;min-height:5mm;width:100%;"></div>' +
+          '</div>'
+        : '') +
+        '<div style="font-size:5pt;color:#777777;">' +
+          (isEvent ? '<span>HealthServe Event</span>' : '<span>&#9658; Al-Rich Express, 2 Lor 22 Geylang &nbsp;&nbsp; 12pm&ndash;7pm only</span>') +
         '</div>' +
-      '</div>'
-    );
+      '</div>' +
+      '<div style="background:' + stripBg + ';border-top:0.5pt solid ' + stripBorder + ';padding:1.5mm 4mm;font-size:5.5pt;font-weight:bold;text-align:center;color:' + stripColor + ';line-height:1.4;">' + stripText + '</div>' +
+      '<div style="background:#fafafa;border-top:0.5pt solid #eeeeee;padding:1.5mm 4mm;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div style="font-size:5pt;color:#aaaaaa;line-height:1.5;">Show Special Pass + this coupon<br>CWSS: +65 6983 6097</div>' +
+        '<div style="font-size:5pt;color:' + headColor + ';font-weight:bold;text-align:right;line-height:1.5;">HealthServe CWSS<br>Food Programme</div>' +
+      '</div>' +
+    '</div>';
   }
 
-  var cols = copies === 9 ? 3 : copies === 6 ? 3 : 2;
   var cards = '';
   for (var i = 0; i < copies; i++) cards += oneCard();
 
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-    '<style>@page{size:A4 portrait;margin:8mm;}body{font-family:Arial,sans-serif;margin:0;padding:0;}' +
-    '.grid{display:grid;grid-template-columns:repeat(' + cols + ',85mm);gap:4mm;justify-content:center;}' +
-    '.header{font-family:Arial,sans-serif;display:flex;justify-content:space-between;align-items:center;padding-bottom:3mm;border-bottom:2pt solid #8C0303;margin-bottom:4mm;}' +
-    '.note{background:#f9f9f7;border:0.5pt solid #ddd;border-radius:2mm;padding:2.5mm 4mm;margin-bottom:4mm;font-size:7pt;color:#555;line-height:1.7;}' +
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
+    'body{margin:0;padding:8mm;font-family:Arial,sans-serif;background:#fff;}' +
+    '.grid{display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:4mm;}' +
+    '.hdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:3mm;border-bottom:2pt solid #8C0303;margin-bottom:3mm;}' +
+    '.note{background:#f9f9f7;border:0.5pt solid #ddd;border-radius:2mm;padding:2.5mm 4mm;margin-bottom:3mm;font-size:7pt;color:#555;line-height:1.7;}' +
+    '@page{size:A4 portrait;margin:0;}' +
+    '@media print{body{padding:6mm;}}' +
     '</style></head><body>' +
-    '<div class="header">' +
-      '<div style="font-size:9pt;font-weight:700;color:#8C0303;">HealthServe CWSS — Food Programme — ' + titleText + '</div>' +
-      '<div style="font-size:6.5pt;color:#aaa;text-align:right;">Al-Rich Express · 12pm–7pm Mon–Fri<br>Printed: ' + new Date().toLocaleDateString('en-GB') + '</div>' +
+    '<div class="hdr">' +
+      '<div style="font-size:9pt;font-weight:bold;color:#8C0303;font-family:Arial,sans-serif;">HealthServe CWSS &mdash; Food Programme &mdash; ' + titleText + '</div>' +
+      '<div style="font-size:6.5pt;color:#aaa;text-align:right;font-family:Arial,sans-serif;">Printed: ' + new Date().toLocaleDateString('en-GB') + '</div>' +
     '</div>' +
     '<div class="note">' + noteText + '</div>' +
     '<div class="grid">' + cards + '</div>' +
-    '<script>window.onload=function(){window.print();window.close();}<\/script>' +
+    '<script>window.onload=function(){window.print();}<' + '/script>' +
     '</body></html>';
 
-  var w = window.open('', '_blank', 'width=800,height=600');
+  var w = window.open('', '_blank');
+  if (!w) { alert('Please allow popups for this site to print coupons.'); return; }
   w.document.write(html);
   w.document.close();
 }
@@ -562,7 +561,7 @@ function checkPin(){
     document.getElementById('pin-screen').style.display='none';
     document.getElementById('main-app').style.display='block';
     loadWorkers();
-    dashLoadData();
+    initDashboard();
   } else {
     const err=document.getElementById('pin-error');
     err.style.display='block';
@@ -808,12 +807,12 @@ async function dashLoadData(){
   document.getElementById('d-date-filter').value=today;
   document.getElementById('d-refresh-time').textContent='Last refreshed: '+sgNow().toTimeString().slice(0,8);
   try{
-    const data=await dbGet('meal_checkins?select=*&checkin_date=gte.'+today+'&order=checkin_time.asc');
-    dashAllData=Array.isArray(data)?data:[];
+    const all=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=500');
+    dashAllData=Array.isArray(all)?all.filter(r=>r.checkin_date===today):[];
     dashUpdateStats(dashAllData);
     dashRenderTable(dashAllData);
   }catch(e){
-    document.getElementById('d-table-body').innerHTML='<div class="empty">Connection error: '+e.message+'</div>';
+    document.getElementById('d-table-body').innerHTML='<div class=\"empty\">Connection error: '+e.message+'</div>';
   }
 }
 
@@ -821,8 +820,9 @@ async function dashLoadFiltered(){
   const d=document.getElementById('d-date-filter').value;
   if(!d)return;
   try{
-    const data=await dbGet('meal_checkins?select=*&checkin_date=eq.'+d+'&order=checkin_time.asc');
-    dashAllData=Array.isArray(data)?data:[];
+    const data=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=500');
+    const filtered=Array.isArray(data)?data.filter(r=>r.checkin_date===d):[];
+    dashAllData=filtered;
     dashUpdateStats(dashAllData);
     dashRenderTable(dashAllData);
   }catch(e){}
@@ -830,7 +830,7 @@ async function dashLoadFiltered(){
 
 function dashSetToday(){
   document.getElementById('d-date-filter').value=sgDate();
-  loadFiltered();
+  dashLoadFiltered();
 }
 
 function dashUpdateStats(data){
@@ -870,12 +870,15 @@ function dashExportCSV(){
   a.click();
 }
 
-setInterval(()=>{document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);},10000);
-document.getElementById('d-header-date').textContent=sgNow().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);
-document.getElementById('d-date-filter').value=sgDate();
-dashLoadData();
-setInterval(dashLoadData,60000);
+// Dashboard init - called after login
+function initDashboard(){
+  document.getElementById('d-header-date').textContent=sgNow().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);
+  document.getElementById('d-date-filter').value=sgDate();
+  dashLoadData();
+  setInterval(()=>{document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);},10000);
+  setInterval(dashLoadData,60000);
+}
 </script>
 </body>
 </html>
