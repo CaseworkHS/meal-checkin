@@ -455,8 +455,6 @@ setCardType('walkin');
 </div>
 
 <script>
-const SB_URL='https://mstxqyftlshgwmzrrkyr.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdHhxeWZ0bHNoZ3dtenJya3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODAxMjUsImV4cCI6MjA5Njc1NjEyNX0.6pwUe7fi1xFMuU83oZj7matMBzWiZtJUYl7nS9u6X50';
 const PIN='CWFP26';
 
 let allWorkers=[];
@@ -483,11 +481,7 @@ function switchTab(t){
   document.getElementById('tab-'+t).classList.add('active');
 }
 
-async function dbGet(path){
-  const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
-  if(!r.ok)throw new Error('DB '+r.status);
-  return r.json();
-}
+// dbGet defined above
 async function dbPost(table,data){
   const r=await fetch(SB_URL+'/rest/v1/'+table,{
     method:'POST',
@@ -709,7 +703,7 @@ async function dbGet(path){
   return r.json();
 }
 
-let allData=[];
+let dashAllData=[];
 
 async function dashLoadData(){
   const today=sgDate();
@@ -717,9 +711,9 @@ async function dashLoadData(){
   document.getElementById('d-refresh-time').textContent='Last refreshed: '+sgNow().toTimeString().slice(0,8);
   try{
     const data=await dbGet('meal_checkins?select=*&checkin_date=gte.'+today+'&order=checkin_time.asc');
-    allData=Array.isArray(data)?data:[];
-    dashUpdateStats(allData);
-    dashRenderTable(allData);
+    dashAllData=Array.isArray(data)?data:[];
+    dashUpdateStats(dashAllData);
+    dashRenderTable(dashAllData);
   }catch(e){
     document.getElementById('d-table-body').innerHTML='<div class="empty">Connection error: '+e.message+'</div>';
   }
@@ -730,9 +724,9 @@ async function dashLoadFiltered(){
   if(!d)return;
   try{
     const data=await dbGet('meal_checkins?select=*&checkin_date=eq.'+d+'&order=checkin_time.asc');
-    allData=Array.isArray(data)?data:[];
-    dashUpdateStats(allData);
-    dashRenderTable(allData);
+    dashAllData=Array.isArray(data)?data:[];
+    dashUpdateStats(dashAllData);
+    dashRenderTable(dashAllData);
   }catch(e){}
 }
 
@@ -770,8 +764,8 @@ function dashRenderTable(data){
 }
 
 function dashExportCSV(){
-  if(!allData.length){alert('No data to export');return;}
-  const rows=[['#','Worker Name','FIN Last 4','Date','Time (SG)'],...allData.map((r,i)=>[i+1,r.worker_name||'',r.fin_last4,r.checkin_date,r.checkin_time])];
+  if(!dashAllData.length){alert('No data to export');return;}
+  const rows=[['#','Worker Name','FIN Last 4','Date','Time (SG)'],...dashAllData.map((r,i)=>[i+1,r.worker_name||'',r.fin_last4,r.checkin_date,r.checkin_time])];
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));
   a.download='meals_'+sgDate()+'.csv';
