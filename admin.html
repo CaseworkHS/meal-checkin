@@ -93,6 +93,7 @@ input:focus,select:focus{outline:none;border-color:#8C0303;}
     <button class="tab-btn active" onclick="switchTab('workers')">Worker list</button>
     <button class="tab-btn" onclick="switchTab('add')">Add worker</button>
     <button class="tab-btn" onclick="switchTab('bulk')">Bulk upload</button>
+    <button class="tab-btn" onclick="switchTab('cards')">Print cards</button>
   </div>
 
   <!-- WORKER LIST TAB -->
@@ -216,6 +217,202 @@ input:focus,select:focus{outline:none;border-color:#8C0303;}
     </div>
   </div>
 
+
+<!-- CARDS TAB - to be embedded in admin.html -->
+<div id="tab-cards" class="tab-panel">
+
+  <!-- Card type selector -->
+  <div class="panel" style="margin-bottom:12px;">
+    <h3>Select card type to print</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <button onclick="setCardType('walkin')" id="ctype-walkin"
+        style="padding:10px;border-radius:8px;border:2px solid #8C0303;background:#8C0303;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">
+        Walk-in Card<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Worker without phone</span>
+      </button>
+      <button onclick="setCardType('event')" id="ctype-event"
+        style="padding:10px;border-radius:8px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:600;cursor:pointer;">
+        Event Meal Card<br><span style="font-size:10px;font-weight:400;opacity:0.7;">Special events / activities</span>
+      </button>
+    </div>
+    <div id="card-type-note" style="font-size:11px;color:#633806;background:#FFF8E1;border:1px solid #ECC11C;border-radius:6px;padding:8px 10px;line-height:1.6;"></div>
+  </div>
+
+  <!-- Print stack of blanks -->
+  <div class="panel">
+    <h3 id="cards-panel-title">Walk-in Meal Cards — Blank Stack</h3>
+    <div style="font-size:11px;color:#666;margin-bottom:12px;line-height:1.6;" id="cards-panel-desc"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <label style="font-size:11px;color:#555;margin:0;">Copies per sheet:</label>
+      <select id="card-copies" style="font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:auto;">
+        <option value="4">4 cards per A4</option>
+        <option value="6" selected>6 cards per A4</option>
+        <option value="9">9 cards per A4 (smaller)</option>
+      </select>
+      <button class="btn primary" onclick="printCards()" style="flex:1;min-width:120px;">&#128438; Print cards</button>
+    </div>
+    <div style="font-size:10px;color:#aaa;line-height:1.5;">
+      Print a stack and keep at front desk. CW writes name + FIN + date by hand when worker visits.
+    </div>
+  </div>
+
+</div>
+
+<!-- PRINT AREA for cards -->
+<div id="cards-print-area" style="display:none;"></div>
+
+<style>
+@media print {
+  .main, .screen-controls { display: none !important; }
+  #cards-print-area { display: block !important; }
+  @page { size: A4 portrait; margin: 8mm; }
+}
+
+.pcard {
+  border: 1.5pt solid #8C0303;
+  border-radius: 3mm;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #fff;
+  page-break-inside: avoid;
+  display: flex;
+  flex-direction: column;
+}
+.pc-head { background: #8C0303; padding: 3mm 4mm; display: flex; justify-content: space-between; align-items: flex-start; }
+.pc-hs { color: #fff; font-size: 8pt; font-weight: 700; line-height: 1.2; }
+.pc-hs-sub { color: rgba(255,255,255,0.6); font-size: 5pt; margin-top: 0.5mm; }
+.pc-badge { font-size: 5.5pt; padding: 1mm 2.5mm; border-radius: 2mm; font-weight: 700; white-space: nowrap; }
+.pc-body { flex: 1; padding: 3mm 4mm; display: flex; flex-direction: column; gap: 2mm; }
+.pc-field { display: flex; flex-direction: column; gap: 0.5mm; }
+.pc-field-lbl { font-size: 5pt; color: #aaa; font-weight: 500; }
+.pc-field-line { border-bottom: 0.8pt solid #1a1a1a; min-height: 5mm; }
+.pc-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+.pc-strip { padding: 1.5mm 4mm; font-size: 5.5pt; font-weight: 700; text-align: center; line-height: 1.4; }
+.pc-foot { background: #fafafa; border-top: 0.5pt solid #eee; padding: 1.5mm 4mm; display: flex; justify-content: space-between; align-items: center; }
+.pc-foot-l { font-size: 5pt; color: #aaa; line-height: 1.4; }
+.pc-foot-r { font-size: 5pt; color: #8C0303; font-weight: 700; text-align: right; line-height: 1.4; }
+
+.psheet-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 3mm; border-bottom: 2pt solid #8C0303; margin-bottom: 4mm; font-family: Arial, sans-serif; }
+.psheet-title { font-size: 9pt; font-weight: 700; color: #8C0303; }
+.psheet-meta { font-size: 6.5pt; color: #aaa; text-align: right; line-height: 1.5; }
+.psheet-note { background: #f9f9f7; border: 0.5pt solid #ddd; border-radius: 2mm; padding: 2.5mm 4mm; margin-bottom: 4mm; font-size: 6.5pt; color: #555; font-family: Arial, sans-serif; line-height: 1.7; }
+</style>
+
+<script>
+var currentCardType = 'walkin';
+
+var CARD_NOTES = {
+  walkin: 'Worker visits CWSS office \u2192 CW adds to system (Add worker tab) \u2192 Write name + FIN + date on card \u2192 Give to worker \u2192 Worker shows card + Special Pass at Al-Rich \u2192 Vendor stamps and serves.',
+  event: 'For special events where workers get a meal separate from the Al-Rich daily programme. These are NOT logged in the check-in system. CW writes name + event date on card. Keep a copy for your own records.'
+};
+
+var CARD_TITLES = {
+  walkin: 'Walk-in Meal Cards \u2014 Blank Stack',
+  event: 'Event Meal Cards \u2014 Blank Stack'
+};
+
+var CARD_DESCS = {
+  walkin: 'Blank cards for workers without phones. Print a stack, keep at front desk. Write name, FIN last 4, and date by hand when worker visits.',
+  event: 'Blank cards for special event meals (workshops, activities, outreach days). Separate from the Al-Rich daily food programme. Write worker name and event date.'
+};
+
+function setCardType(type) {
+  currentCardType = type;
+  var types = ['walkin', 'event'];
+  types.forEach(function(t) {
+    var btn = document.getElementById('ctype-' + t);
+    if (t === type) {
+      btn.style.background = '#8C0303';
+      btn.style.color = '#fff';
+      btn.style.borderColor = '#8C0303';
+    } else {
+      btn.style.background = '#fff';
+      btn.style.color = '#555';
+      btn.style.borderColor = '#ddd';
+    }
+  });
+  document.getElementById('card-type-note').textContent = CARD_NOTES[type];
+  document.getElementById('cards-panel-title').textContent = CARD_TITLES[type];
+  document.getElementById('cards-panel-desc').textContent = CARD_DESCS[type];
+}
+
+function buildBlankCard(type) {
+  var isEvent = type === 'event';
+  var badgeText = isEvent ? 'Event Meal' : 'Walk-in';
+  var badgeBg = isEvent ? 'rgba(12,68,124,0.15)' : 'rgba(133,79,11,0.15)';
+  var badgeColor = isEvent ? '#0C447C' : '#854F0B';
+  var stripBg = isEvent ? '#E6F1FB' : '#FAEEDA';
+  var stripBorder = isEvent ? '#0C447C' : '#ECC11C';
+  var stripColor = isEvent ? '#0C447C' : '#633806';
+  var stripText = isEvent
+    ? 'EVENT MEAL ONLY \u00B7 Not valid at Al-Rich Express \u00B7 One meal per event'
+    : 'Show Special Pass + this card \u00B7 1 meal only \u00B7 Not transferable';
+
+  var dateLabel = isEvent ? 'Event date' : 'Date';
+  var extraField = isEvent
+    ? '<div class="pc-field"><div class="pc-field-lbl">Event / Activity name</div><div class="pc-field-line"></div></div>'
+    : '';
+
+  return '<div class="pcard">' +
+    '<div class="pc-head">' +
+      '<div><div class="pc-hs">HealthServe</div><div class="pc-hs-sub">healing, inspiring &amp; bridging communities</div></div>' +
+      '<div class="pc-badge" style="background:' + badgeBg + ';color:' + badgeColor + ';border:0.5pt solid ' + badgeColor + ';">' + badgeText + '</div>' +
+    '</div>' +
+    '<div class="pc-body">' +
+      '<div class="pc-field"><div class="pc-field-lbl">Worker name</div><div class="pc-field-line" style="min-height:6mm;"></div></div>' +
+      '<div class="pc-field-row">' +
+        '<div class="pc-field"><div class="pc-field-lbl">FIN last 4</div><div class="pc-field-line"></div></div>' +
+        '<div class="pc-field"><div class="pc-field-lbl">' + dateLabel + '</div><div class="pc-field-line"></div></div>' +
+      '</div>' +
+      extraField +
+      '<div style="display:flex;justify-content:space-between;font-size:5pt;color:#aaa;margin-top:1mm;">' +
+        (isEvent
+          ? '<span>Issued by CWSS \u00B7 +65 6983 6097</span><span>HealthServe CWSS</span>'
+          : '<span>Al-Rich Express \u00B7 2 Lor 22 Geylang \u00B7 12pm\u20137pm</span><span>CWSS \u00B7 +65 6983 6097</span>'
+        ) +
+      '</div>' +
+    '</div>' +
+    '<div class="pc-strip" style="background:' + stripBg + ';border-top:0.5pt solid ' + stripBorder + ';color:' + stripColor + ';">' +
+      stripText +
+    '</div>' +
+    '<div class="pc-foot">' +
+      '<div class="pc-foot-l">Show Special Pass + this card<br>Misuse = card cancelled</div>' +
+      '<div class="pc-foot-r">HealthServe CWSS<br>Food Programme</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function printCards() {
+  var copies = parseInt(document.getElementById('card-copies').value) || 6;
+  var type = currentCardType;
+  var isEvent = type === 'event';
+
+  var cols = copies === 9 ? 3 : copies === 6 ? 3 : 2;
+  var cardHTML = buildBlankCard(type);
+  var cards = '';
+  for (var i = 0; i < copies; i++) cards += cardHTML;
+
+  var titleText = isEvent ? 'Event Meal Card (Blank)' : 'Walk-in Meal Card (Blank)';
+  var noteText = isEvent
+    ? '<strong>For event meals only.</strong> Not valid at Al-Rich Express. Write worker name and event date. Keep a copy for records. One card = one meal at the event.'
+    : '<strong>Walk-in process:</strong> Worker visits CWSS office \u2192 CW adds to admin system \u2192 Write name + FIN last 4 + date \u2192 Worker shows card + Special Pass at Al-Rich \u2192 Vendor stamps, serves meal.';
+
+  var html =
+    '<div class="psheet-header">' +
+      '<div class="psheet-title">HealthServe CWSS \u2014 Food Programme \u2014 ' + titleText + '</div>' +
+      '<div class="psheet-meta">Al-Rich Express \u00B7 12pm\u20137pm Mon\u2013Fri<br>Printed: ' + new Date().toLocaleDateString('en-GB') + '</div>' +
+    '</div>' +
+    '<div class="psheet-note">' + noteText + '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:4mm;">' + cards + '</div>';
+
+  var pa = document.getElementById('cards-print-area');
+  pa.innerHTML = html;
+  pa.style.display = 'block';
+  setTimeout(function() { window.print(); pa.style.display = 'none'; }, 200);
+}
+
+// Init
+setCardType('walkin');
+</script>
 
 </div>
 

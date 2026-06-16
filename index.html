@@ -49,8 +49,8 @@ input:focus{outline:none;border-color:#8C0303;}
   </div>
   <div class="test-banner" id="test-banner">&#9881; TEST MODE</div>
   <div class="time-warn" id="time-warn">
-    &#9201; <strong>12pm to 5pm, Monday to Friday only</strong><br>
-    <span style="font-size:11px;">দুপুর ১২টা – বিকাল ৫টা | மதியம் 12 – மாலை 5</span>
+    &#9201; <strong>12pm to 7pm, Monday to Friday only</strong><br>
+    <span style="font-size:11px;">দুপুর ১২টা – সন্ধ্যা ৭টা | மதியம் 12 – மாலை 7</span>
   </div>
   <div id="form-area">
     <div class="form-group">
@@ -95,7 +95,7 @@ function sgDate() {
   return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
 }
 function isWeekday() { var d = sgNow().getDay(); return d >= 1 && d <= 5; }
-function inWindow() { var h = sgNow().getHours(); return h >= 12 && h < 17; }
+function inWindow() { var h = sgNow().getHours(); return h >= 12 && h < 19; }
 function hdrs() { return {apikey: KEY, Authorization: 'Bearer ' + KEY}; }
 
 function showStatus(cls, icon, title, msg) {
@@ -133,9 +133,9 @@ async function doCheckin(bypass) {
   if (!bypass) {
     if (!isWeekday() || !inWindow()) {
       showStatus('warning', '⏰', 'Not available now',
-        '<strong>12pm to 5pm, Monday to Friday only</strong><br><br>' +
-        'দুপুর ১২টা – বিকাল ৫টা (সোমবার–শুক্রবার)<br>' +
-        'மதியம் 12 – மாலை 5 மணி (திங்கள்–வெள்ளி)');
+        '<strong>12pm to 7pm, Monday to Friday only</strong><br><br>' +
+        'দুপুর ১২টা – সন্ধ্যা ৭টা (সোমবার–শুক্রবার)<br>' +
+        'மதியம் 12 – மாலை 7 மணி (திங்கள்–வெள்ளி)');
       return;
     }
   }
