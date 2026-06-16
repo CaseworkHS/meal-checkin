@@ -121,15 +121,15 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('workers')">Worker list</button>
+    <button class="tab-btn active" onclick="switchTab('dashboard');dashLoadData();">Food Distribution Log</button>
+    <button class="tab-btn" onclick="switchTab('workers')">Worker list</button>
     <button class="tab-btn" onclick="switchTab('add')">Add worker</button>
     <button class="tab-btn" onclick="switchTab('bulk')">Bulk upload</button>
-    <button class="tab-btn" onclick="switchTab('cards')">Print cards</button>
-    <button class="tab-btn" onclick="switchTab('dashboard');dashLoadData();">Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('cards')">Print coupons</button>
   </div>
 
   <!-- WORKER LIST TAB -->
-  <div id="tab-workers" class="tab-panel active">
+  <div id="tab-workers" class="tab-panel">
     <div class="stats">
       <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Total active</div></div>
       <div class="stat"><div class="num" id="stat-regular">0</div><div class="lbl">Regular</div></div>
@@ -271,7 +271,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
 
   <!-- Print stack of blanks -->
   <div class="panel">
-    <h3 id="cards-panel-title">Walk-in Meal Cards — Blank Stack</h3>
+    <h3 id="cards-panel-title">Walk-in Meal Coupon — Blank Stack</h3>
     <div style="font-size:11px;color:#666;margin-bottom:12px;line-height:1.6;" id="cards-panel-desc"></div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
       <label style="font-size:11px;color:#555;margin:0;">Copies per sheet:</label>
@@ -280,7 +280,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
         <option value="6" selected>6 cards per A4</option>
         <option value="9">9 cards per A4 (smaller)</option>
       </select>
-      <button class="btn primary" onclick="printCards()" style="flex:1;min-width:120px;">&#128438; Print cards</button>
+      <button class="btn primary" onclick="printCards()" style="flex:1;min-width:120px;">&#128438; Print coupons</button>
     </div>
     <div style="font-size:10px;color:#aaa;line-height:1.5;">
       Print a stack and keep at front desk. CW writes name + FIN + date by hand when worker visits.
@@ -340,12 +340,12 @@ var currentCardType = 'walkin';
 
 var CARD_NOTES = {
   walkin: 'Worker visits CWSS office \u2192 CW adds to system (Add worker tab) \u2192 Write name + FIN + date on card \u2192 Give to worker \u2192 Worker shows card + Special Pass at Al-Rich \u2192 Vendor stamps and serves.',
-  event: 'For special events where workers get a meal separate from the Al-Rich daily programme. These are NOT logged in the check-in system. CW writes name + event date on card. Keep a copy for your own records.'
+  event: 'For special events where workers get a meal separate from the Al-Rich daily programme. CW writes name + FIN last 4 + date and gives coupon \u2192 Worker shows coupon + Special Pass at event \u2192 Staff collects coupon, serves meal. Keep a copy for records.'
 };
 
 var CARD_TITLES = {
-  walkin: 'Walk-in Meal Cards \u2014 Blank Stack',
-  event: 'Event Meal Cards \u2014 Blank Stack'
+  walkin: 'Walk-in Meal Coupon \u2014 Blank Stack',
+  event: 'Event Meal Coupon \u2014 Blank Stack'
 };
 
 var CARD_DESCS = {
@@ -375,47 +375,82 @@ function setCardType(type) {
 
 function buildBlankCard(type) {
   var isEvent = type === 'event';
-  var badgeText = isEvent ? 'Event Meal' : 'Walk-in';
+  var badgeText = isEvent ? 'Event Meal Coupon' : 'Walk-in Coupon';
   var badgeBg = isEvent ? 'rgba(8,80,65,0.15)' : 'rgba(133,79,11,0.15)';
   var badgeColor = isEvent ? '#085041' : '#854F0B';
   var stripBg = isEvent ? '#E1F5EE' : '#FAEEDA';
   var stripBorder = isEvent ? '#085041' : '#ECC11C';
   var stripColor = isEvent ? '#085041' : '#633806';
   var stripText = isEvent
-    ? 'EVENT MEAL ONLY \u00B7 Not valid at Al-Rich Express \u00B7 One meal per event'
-    : 'Show Special Pass + this card \u00B7 1 meal only \u00B7 Not transferable';
+    ? 'EVENT MEAL COUPON \u00B7 Show Special Pass + this coupon \u00B7 Vendor collects this coupon'
+    : 'Show Special Pass + this coupon \u00B7 1 meal only \u00B7 Vendor to collect this coupon';
 
   var dateLabel = isEvent ? 'Event date' : 'Date';
   var extraField = isEvent
     ? '<div class="pc-field"><div class="pc-field-lbl">Event / Activity name</div><div class="pc-field-line"></div></div>'
     : '';
 
+  var headColor = isEvent ? '#085041' : '#8C0303';
+  var venueText = isEvent ? 'HealthServe Event' : 'Al-Rich Express, 2 Lor 22 Geylang';
+  var hoursText = isEvent ? 'Event date above' : '12pm – 7pm only';
+
   return '<div class="pcard">' +
-    '<div class="pc-head" style="background:' + (isEvent ? '#085041' : '#8C0303') + ';">' +
-      '<div><div class="pc-hs">HealthServe</div><div class="pc-hs-sub">healing, inspiring &amp; bridging communities</div></div>' +
-      '<div class="pc-badge" style="background:' + badgeBg + ';color:' + badgeColor + ';border:0.5pt solid ' + badgeColor + ';">' + badgeText + '</div>' +
-    '</div>' +
-    '<div class="pc-body">' +
-      '<div class="pc-field"><div class="pc-field-lbl">Worker name</div><div class="pc-field-line" style="min-height:6mm;"></div></div>' +
-      '<div class="pc-field-row">' +
-        '<div class="pc-field"><div class="pc-field-lbl">FIN last 4</div><div class="pc-field-line"></div></div>' +
-        '<div class="pc-field"><div class="pc-field-lbl">' + dateLabel + '</div><div class="pc-field-line"></div></div>' +
+
+    // Header
+    '<div style="background:' + headColor + ';padding:3mm 4mm 2.5mm;display:flex;justify-content:space-between;align-items:flex-start;">' +
+      '<div>' +
+        '<div style="color:#fff;font-size:8pt;font-weight:700;line-height:1.2;">HealthServe</div>' +
+        '<div style="color:rgba(255,255,255,0.6);font-size:5pt;">healing, inspiring &amp; bridging communities</div>' +
       '</div>' +
-      extraField +
-      '<div style="display:flex;justify-content:space-between;font-size:5pt;color:#aaa;margin-top:1mm;">' +
-        (isEvent
-          ? '<span>Issued by CWSS \u00B7 +65 6983 6097</span><span>HealthServe CWSS</span>'
-          : '<span>Al-Rich Express \u00B7 2 Lor 22 Geylang \u00B7 12pm\u20137pm</span><span>CWSS \u00B7 +65 6983 6097</span>'
-        ) +
-      '</div>' +
+      '<div style="background:rgba(255,255,255,0.15);color:#fff;font-size:5.5pt;padding:1mm 2.5mm;border-radius:2mm;font-weight:700;white-space:nowrap;">' + badgeText + '</div>' +
     '</div>' +
-    '<div class="pc-strip" style="background:' + stripBg + ';border-top:0.5pt solid ' + stripBorder + ';color:' + stripColor + ';">' +
+
+    // Body
+    '<div style="flex:1;padding:3mm 4mm 2mm;display:flex;flex-direction:column;gap:2.5mm;">' +
+
+      // Name field
+      '<div>' +
+        '<div style="font-size:5pt;color:#888;margin-bottom:1mm;font-weight:500;">WORKER NAME</div>' +
+        '<div style="border-bottom:1pt solid #1a1a1a;min-height:7mm;width:100%;"></div>' +
+      '</div>' +
+
+      // FIN + Date row
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;">' +
+        '<div>' +
+          '<div style="font-size:5pt;color:#888;margin-bottom:1mm;font-weight:500;">FIN LAST 4</div>' +
+          '<div style="border-bottom:1pt solid #1a1a1a;min-height:6mm;"></div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:5pt;color:#888;margin-bottom:1mm;font-weight:500;">' + dateLabel.toUpperCase() + '</div>' +
+          '<div style="border-bottom:1pt solid #1a1a1a;min-height:6mm;"></div>' +
+        '</div>' +
+      '</div>' +
+
+      // Event name field (event only)
+      (isEvent ? '<div>' +
+        '<div style="font-size:5pt;color:#888;margin-bottom:1mm;font-weight:500;">EVENT / ACTIVITY NAME</div>' +
+        '<div style="border-bottom:1pt solid #1a1a1a;min-height:5mm;width:100%;"></div>' +
+      '</div>' : '') +
+
+      // Venue + hours
+      '<div style="display:flex;justify-content:space-between;font-size:5pt;color:#777;margin-top:0.5mm;">' +
+        '<span>► ' + venueText + '</span>' +
+        '<span>' + hoursText + '</span>' +
+      '</div>' +
+
+    '</div>' +
+
+    // Strip
+    '<div style="background:' + stripBg + ';border-top:0.5pt solid ' + stripBorder + ';padding:1.5mm 4mm;font-size:5.5pt;font-weight:700;text-align:center;color:' + stripColor + ';line-height:1.4;">' +
       stripText +
     '</div>' +
-    '<div class="pc-foot">' +
-      '<div class="pc-foot-l">Show Special Pass + this card<br>Misuse = card cancelled</div>' +
-      '<div class="pc-foot-r">HealthServe CWSS<br>Food Programme</div>' +
+
+    // Footer
+    '<div style="background:#fafafa;border-top:0.5pt solid #eee;padding:1.5mm 4mm;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div style="font-size:5pt;color:#aaa;line-height:1.4;">Show Special Pass + this coupon<br>CWSS +65 6983 6097</div>' +
+      '<div style="font-size:5pt;color:' + headColor + ';font-weight:700;text-align:right;line-height:1.4;">HealthServe CWSS<br>Food Programme</div>' +
     '</div>' +
+
   '</div>';
 }
 
@@ -429,10 +464,10 @@ function printCards() {
   var cards = '';
   for (var i = 0; i < copies; i++) cards += cardHTML;
 
-  var titleText = isEvent ? 'Event Meal Card (Blank)' : 'Walk-in Meal Card (Blank)';
+  var titleText = isEvent ? 'HealthServe CWSS — Event Meal Coupon' : 'HealthServe CWSS — Food Coupon';
   var noteText = isEvent
-    ? '<strong>For event meals only.</strong> Not valid at Al-Rich Express. Write worker name and event date. Keep a copy for records. One card = one meal at the event.'
-    : '<strong>Walk-in process:</strong> Worker visits CWSS office \u2192 CW adds to admin system \u2192 Write name + FIN last 4 + date \u2192 Worker shows card + Special Pass at Al-Rich \u2192 Vendor stamps, serves meal.';
+    ? '<strong>Event meal coupon.</strong> CW writes name + FIN last 4 + date \u2192 Worker shows coupon + Special Pass at event \u2192 Staff collects coupon, serves meal. Keep a copy for records. One coupon = one meal.'
+    : '<strong>Walk-in food coupon:</strong> Worker visits CWSS office with no phone \u2192 CW writes name + FIN last 4 + date on coupon \u2192 Worker shows coupon + Special Pass at Al-Rich \u2192 Vendor collects coupon and serves meal. One coupon = one meal.';
 
   var html =
     '<div class="psheet-header">' +
@@ -450,6 +485,7 @@ function printCards() {
 
 // Init
 setCardType('walkin');
+dashLoadData();
 </script>
 
 </div>
