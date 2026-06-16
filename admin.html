@@ -60,6 +60,38 @@ input:focus,select:focus{outline:none;border-color:#8C0303;}
 .search-bar input{flex:1;}
 .empty{text-align:center;padding:30px;color:#aaa;font-size:13px;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
+.header{background:#8C0303;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.header h1{color:#fff;font-size:16px;}
+.header .date{color:rgba(255,255,255,0.8);font-size:12px;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.stat{background:#fff;border-radius:10px;padding:14px;text-align:center;border:0.5px solid #eee;}
+.stat .num{font-size:28px;font-weight:700;}
+.stat .lbl{font-size:11px;color:#888;margin-top:3px;}
+.stat.green .num{color:#085041;}
+.stat.amber .num{color:#854F0B;}
+.stat.red .num{color:#8C0303;}
+.controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+.btn{font-size:12px;padding:8px 14px;border:1px solid #ddd;border-radius:8px;cursor:pointer;background:#fff;font-weight:500;}
+.btn.primary{background:#8C0303;color:#fff;border-color:#8C0303;}
+.btn.green{background:#085041;color:#fff;border-color:#085041;}
+.table-wrap{background:#fff;border-radius:10px;overflow:hidden;border:0.5px solid #eee;}
+.table-header{background:#8C0303;color:#fff;display:grid;grid-template-columns:36px 1fr 70px 80px 90px 80px;padding:8px 12px;font-size:11px;font-weight:600;gap:4px;}
+.table-row{display:grid;grid-template-columns:36px 1fr 70px 80px 90px 80px;padding:8px 12px;font-size:12px;border-bottom:0.5px solid #f0f0f0;align-items:center;gap:4px;}
+.table-row:nth-child(even){background:#fafafa;}
+.table-row:last-child{border-bottom:none;}
+.fin-badge{background:#F4E3DC;color:#8C0303;font-weight:700;padding:2px 7px;border-radius:5px;font-size:11px;display:inline-block;}
+.empty{text-align:center;padding:40px;color:#aaa;font-size:13px;}
+.refresh-time{font-size:11px;color:#aaa;text-align:right;margin-bottom:8px;}
+.cap-bar-wrap{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;border:0.5px solid #eee;}
+.cap-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;}
+.cap-label span:first-child{font-weight:600;color:#333;}
+.cap-label span:last-child{font-weight:700;}
+.cap-bar{height:12px;background:#f0f0f0;border-radius:6px;overflow:hidden;}
+.cap-fill{height:100%;border-radius:6px;transition:width 0.3s;}
+
 </style>
 </head>
 <body>
@@ -84,7 +116,6 @@ input:focus,select:focus{outline:none;border-color:#8C0303;}
   <div class="header">
     <h1>HealthServe CWSS &mdash; Food Programme Admin</h1>
     <div class="header-right">
-      <a href="staff.html">Dashboard &rarr;</a>
       <a href="index.html">Check-in &rarr;</a>
     </div>
   </div>
@@ -94,6 +125,7 @@ input:focus,select:focus{outline:none;border-color:#8C0303;}
     <button class="tab-btn" onclick="switchTab('add')">Add worker</button>
     <button class="tab-btn" onclick="switchTab('bulk')">Bulk upload</button>
     <button class="tab-btn" onclick="switchTab('cards')">Print cards</button>
+    <button class="tab-btn" onclick="switchTab('dashboard');dashLoadData();">Dashboard</button>
   </div>
 
   <!-- WORKER LIST TAB -->
@@ -262,8 +294,14 @@ input:focus,select:focus{outline:none;border-color:#8C0303;}
 
 <style>
 @media print {
-  .main, .screen-controls { display: none !important; }
-  #cards-print-area { display: block !important; }
+  body * { visibility: hidden; }
+  #cards-print-area, #cards-print-area * { visibility: visible; }
+  #cards-print-area { 
+    display: block !important; 
+    position: absolute; 
+    top: 0; left: 0; 
+    width: 100%;
+  }
   @page { size: A4 portrait; margin: 8mm; }
 }
 
@@ -338,11 +376,11 @@ function setCardType(type) {
 function buildBlankCard(type) {
   var isEvent = type === 'event';
   var badgeText = isEvent ? 'Event Meal' : 'Walk-in';
-  var badgeBg = isEvent ? 'rgba(12,68,124,0.15)' : 'rgba(133,79,11,0.15)';
-  var badgeColor = isEvent ? '#0C447C' : '#854F0B';
-  var stripBg = isEvent ? '#E6F1FB' : '#FAEEDA';
-  var stripBorder = isEvent ? '#0C447C' : '#ECC11C';
-  var stripColor = isEvent ? '#0C447C' : '#633806';
+  var badgeBg = isEvent ? 'rgba(8,80,65,0.15)' : 'rgba(133,79,11,0.15)';
+  var badgeColor = isEvent ? '#085041' : '#854F0B';
+  var stripBg = isEvent ? '#E1F5EE' : '#FAEEDA';
+  var stripBorder = isEvent ? '#085041' : '#ECC11C';
+  var stripColor = isEvent ? '#085041' : '#633806';
   var stripText = isEvent
     ? 'EVENT MEAL ONLY \u00B7 Not valid at Al-Rich Express \u00B7 One meal per event'
     : 'Show Special Pass + this card \u00B7 1 meal only \u00B7 Not transferable';
@@ -353,7 +391,7 @@ function buildBlankCard(type) {
     : '';
 
   return '<div class="pcard">' +
-    '<div class="pc-head">' +
+    '<div class="pc-head" style="background:' + (isEvent ? '#085041' : '#8C0303') + ';">' +
       '<div><div class="pc-hs">HealthServe</div><div class="pc-hs-sub">healing, inspiring &amp; bridging communities</div></div>' +
       '<div class="pc-badge" style="background:' + badgeBg + ';color:' + badgeColor + ';border:0.5pt solid ' + badgeColor + ';">' + badgeText + '</div>' +
     '</div>' +
@@ -656,6 +694,96 @@ async function bulkUpload(){
   await loadWorkers();
 }
 
+const SB_URL='https://mstxqyftlshgwmzrrkyr.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdHhxeWZ0bHNoZ3dtenJya3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODAxMjUsImV4cCI6MjA5Njc1NjEyNX0.6pwUe7fi1xFMuU83oZj7matMBzWiZtJUYl7nS9u6X50';
+const DAILY_CAP=30;
+
+function sgNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'}));}
+function sgDate(d){d=d||sgNow();return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');}
+
+async function dbGet(path){
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  });
+  if(!r.ok)throw new Error('DB '+r.status);
+  return r.json();
+}
+
+let allData=[];
+
+async function dashLoadData(){
+  const today=sgDate();
+  document.getElementById('d-date-filter').value=today;
+  document.getElementById('d-refresh-time').textContent='Last refreshed: '+sgNow().toTimeString().slice(0,8);
+  try{
+    const data=await dbGet('meal_checkins?select=*&checkin_date=gte.'+today+'&order=checkin_time.asc');
+    allData=Array.isArray(data)?data:[];
+    dashUpdateStats(allData);
+    dashRenderTable(allData);
+  }catch(e){
+    document.getElementById('d-table-body').innerHTML='<div class="empty">Connection error: '+e.message+'</div>';
+  }
+}
+
+async function dashLoadFiltered(){
+  const d=document.getElementById('d-date-filter').value;
+  if(!d)return;
+  try{
+    const data=await dbGet('meal_checkins?select=*&checkin_date=eq.'+d+'&order=checkin_time.asc');
+    allData=Array.isArray(data)?data:[];
+    dashUpdateStats(allData);
+    dashRenderTable(allData);
+  }catch(e){}
+}
+
+function dashSetToday(){
+  document.getElementById('d-date-filter').value=sgDate();
+  loadFiltered();
+}
+
+function dashUpdateStats(data){
+  const n=data.length;
+  const rem=Math.max(0,DAILY_CAP-n);
+  const pct=Math.min(100,(n/DAILY_CAP)*100);
+  document.getElementById('d-stat-today').textContent=n;
+  document.getElementById('d-stat-remaining').textContent=rem;
+  document.getElementById('d-cap-label-right').textContent=n+' / '+DAILY_CAP+' meals';
+  const fill=document.getElementById('d-cap-fill');
+  fill.style.width=pct+'%';
+  fill.style.background=pct>=90?'#8C0303':pct>=60?'#ECC11C':'#085041';
+}
+
+function dashRenderTable(data){
+  if(!data.length){
+    document.getElementById('d-table-body').innerHTML='<div class="empty">No meals recorded for this date</div>';
+    return;
+  }
+  document.getElementById('d-table-body').innerHTML=data.map((r,i)=>`
+    <div class="table-row">
+      <div style="color:#aaa;font-size:11px;">${i+1}</div>
+      <div style="font-weight:500;color:#1a1a1a;">${r.worker_name||'--'}</div>
+      <div><span class="fin-badge">${r.fin_last4}</span></div>
+      <div><span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;background:${r.worker_type==='Walk-in'?'#FAEEDA':r.worker_type==='New'?'#E6F1FB':'#E1F5EE'};color:${r.worker_type==='Walk-in'?'#633806':r.worker_type==='New'?'#0C447C':'#085041'}">${r.worker_type||'Regular'}</span></div>
+      <div style="color:#666;font-size:11px;">${r.checkin_date}</div>
+      <div style="color:#666;font-size:11px;">${r.checkin_time||'--'}</div>
+    </div>`).join('');
+}
+
+function dashExportCSV(){
+  if(!allData.length){alert('No data to export');return;}
+  const rows=[['#','Worker Name','FIN Last 4','Date','Time (SG)'],...allData.map((r,i)=>[i+1,r.worker_name||'',r.fin_last4,r.checkin_date,r.checkin_time])];
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));
+  a.download='meals_'+sgDate()+'.csv';
+  a.click();
+}
+
+setInterval(()=>{document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);},10000);
+document.getElementById('d-header-date').textContent=sgNow().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);
+document.getElementById('d-date-filter').value=sgDate();
+dashLoadData();
+setInterval(dashLoadData,60000);
 </script>
 </body>
 </html>
