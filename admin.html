@@ -339,8 +339,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
 var currentCardType = 'walkin';
 
 var CARD_NOTES = {
-  walkin: 'Worker visits CWSS office \u2192 CW adds to system (Add worker tab) \u2192 Write name + FIN + date on card \u2192 Give to worker \u2192 Worker shows card + Special Pass at Al-Rich \u2192 Vendor stamps and serves.',
-  event: 'For special events where workers get a meal separate from the Al-Rich daily programme. CW writes name + FIN last 4 + date and gives coupon \u2192 Worker shows coupon + Special Pass at event \u2192 Staff collects coupon, serves meal. Keep a copy for records.'
+  walkin: 'Worker visits CWSS office without phone → Needs food coupon → CW writes name + FIN last 4 + date on coupon → Worker shows coupon + Special Pass at Al-Rich → Vendor collects coupon, serves meal.',
+  event: 'For special events separate from the Al-Rich daily programme. CW writes name + FIN last 4 + date and gives coupon → Worker shows coupon + Special Pass at event → Staff collects coupon, serves meal. Keep a copy for records.'
 };
 
 var CARD_TITLES = {
@@ -458,29 +458,90 @@ function printCards() {
   var copies = parseInt(document.getElementById('card-copies').value) || 6;
   var type = currentCardType;
   var isEvent = type === 'event';
+  var headColor = isEvent ? '#085041' : '#8C0303';
+  var stripBg = isEvent ? '#E1F5EE' : '#FAEEDA';
+  var stripBorder = isEvent ? '#085041' : '#B8920A';
+  var stripColor = isEvent ? '#085041' : '#633806';
+  var badgeText = isEvent ? 'Event Meal Coupon' : 'Walk-in Coupon';
+  var dateLabel = isEvent ? 'EVENT DATE' : 'DATE';
+  var venueText = isEvent ? 'HealthServe Event' : 'Al-Rich Express, 2 Lor 22 Geylang';
+  var hoursText = isEvent ? '' : '12pm–7pm only';
+  var stripText = isEvent
+    ? 'EVENT MEAL COUPON · Show Special Pass + this coupon · Staff collects coupon'
+    : 'Show Special Pass + this coupon · 1 meal only · Vendor to collect this coupon';
+  var noteText = isEvent
+    ? '<strong>Event meal coupon:</strong> CW writes name + FIN last 4 + event date → Worker shows coupon + Special Pass at event → Staff collects coupon, serves meal. Keep a copy for records.'
+    : '<strong>Walk-in food coupon:</strong> Worker visits CWSS office without phone → CW writes name + FIN last 4 + date → Worker shows coupon + Special Pass at Al-Rich → Vendor collects coupon, serves meal.';
+  var titleText = isEvent ? 'Event Meal Coupon' : 'Walk-in Food Coupon';
+
+  function oneCard() {
+    var extraField = isEvent ? (
+      '<div style="margin-bottom:4mm;">' +
+        '<div style="font-size:6pt;color:#888;font-weight:600;letter-spacing:0.05em;margin-bottom:1.5mm;">EVENT / ACTIVITY NAME</div>' +
+        '<div style="border-bottom:1pt solid #1a1a1a;min-height:5mm;"></div>' +
+      '</div>'
+    ) : '';
+    return (
+      '<div style="width:85mm;border:1.5pt solid ' + headColor + ';border-radius:3mm;overflow:hidden;font-family:Arial,sans-serif;background:#fff;page-break-inside:avoid;display:flex;flex-direction:column;box-sizing:border-box;">' +
+        '<div style="background:' + headColor + ';padding:3mm 4mm 2.5mm;display:flex;justify-content:space-between;align-items:flex-start;">' +
+          '<div>' +
+            '<div style="color:#fff;font-size:8pt;font-weight:700;line-height:1.2;">HealthServe</div>' +
+            '<div style="color:rgba(255,255,255,0.6);font-size:5pt;margin-top:0.5mm;">healing, inspiring &amp; bridging communities</div>' +
+          '</div>' +
+          '<div style="background:rgba(255,255,255,0.2);color:#fff;font-size:5.5pt;padding:1mm 2.5mm;border-radius:2mm;font-weight:700;white-space:nowrap;">' + badgeText + '</div>' +
+        '</div>' +
+        '<div style="padding:3mm 4mm;display:flex;flex-direction:column;gap:2.5mm;flex:1;">' +
+          '<div>' +
+            '<div style="font-size:6pt;color:#888;font-weight:600;letter-spacing:0.05em;margin-bottom:1.5mm;">WORKER NAME</div>' +
+            '<div style="border-bottom:1pt solid #1a1a1a;min-height:7mm;width:100%;"></div>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;">' +
+            '<div>' +
+              '<div style="font-size:6pt;color:#888;font-weight:600;letter-spacing:0.05em;margin-bottom:1.5mm;">FIN LAST 4</div>' +
+              '<div style="border-bottom:1pt solid #1a1a1a;min-height:6mm;"></div>' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-size:6pt;color:#888;font-weight:600;letter-spacing:0.05em;margin-bottom:1.5mm;">' + dateLabel + '</div>' +
+              '<div style="border-bottom:1pt solid #1a1a1a;min-height:6mm;"></div>' +
+            '</div>' +
+          '</div>' +
+          extraField +
+          '<div style="font-size:5pt;color:#777;">' +
+            '<span style="margin-right:4mm;">► ' + venueText + '</span>' +
+            (hoursText ? '<span>' + hoursText + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div style="background:' + stripBg + ';border-top:0.5pt solid ' + stripBorder + ';padding:1.5mm 4mm;font-size:5.5pt;font-weight:700;text-align:center;color:' + stripColor + ';line-height:1.4;">' + stripText + '</div>' +
+        '<div style="background:#fafafa;border-top:0.5pt solid #eee;padding:1.5mm 4mm;display:flex;justify-content:space-between;align-items:center;">' +
+          '<div style="font-size:5pt;color:#aaa;line-height:1.5;">Show Special Pass + this coupon<br>CWSS: +65 6983 6097</div>' +
+          '<div style="font-size:5pt;color:' + headColor + ';font-weight:700;text-align:right;line-height:1.5;">HealthServe CWSS<br>Food Programme</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
 
   var cols = copies === 9 ? 3 : copies === 6 ? 3 : 2;
-  var cardHTML = buildBlankCard(type);
   var cards = '';
-  for (var i = 0; i < copies; i++) cards += cardHTML;
+  for (var i = 0; i < copies; i++) cards += oneCard();
 
-  var titleText = isEvent ? 'HealthServe CWSS — Event Meal Coupon' : 'HealthServe CWSS — Food Coupon';
-  var noteText = isEvent
-    ? '<strong>Event meal coupon.</strong> CW writes name + FIN last 4 + date \u2192 Worker shows coupon + Special Pass at event \u2192 Staff collects coupon, serves meal. Keep a copy for records. One coupon = one meal.'
-    : '<strong>Walk-in food coupon:</strong> Worker visits CWSS office with no phone \u2192 CW writes name + FIN last 4 + date on coupon \u2192 Worker shows coupon + Special Pass at Al-Rich \u2192 Vendor collects coupon and serves meal. One coupon = one meal.';
-
-  var html =
-    '<div class="psheet-header">' +
-      '<div class="psheet-title">HealthServe CWSS \u2014 Food Programme \u2014 ' + titleText + '</div>' +
-      '<div class="psheet-meta">Al-Rich Express \u00B7 12pm\u20137pm Mon\u2013Fri<br>Printed: ' + new Date().toLocaleDateString('en-GB') + '</div>' +
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<style>@page{size:A4 portrait;margin:8mm;}body{font-family:Arial,sans-serif;margin:0;padding:0;}' +
+    '.grid{display:grid;grid-template-columns:repeat(' + cols + ',85mm);gap:4mm;justify-content:center;}' +
+    '.header{font-family:Arial,sans-serif;display:flex;justify-content:space-between;align-items:center;padding-bottom:3mm;border-bottom:2pt solid #8C0303;margin-bottom:4mm;}' +
+    '.note{background:#f9f9f7;border:0.5pt solid #ddd;border-radius:2mm;padding:2.5mm 4mm;margin-bottom:4mm;font-size:7pt;color:#555;line-height:1.7;}' +
+    '</style></head><body>' +
+    '<div class="header">' +
+      '<div style="font-size:9pt;font-weight:700;color:#8C0303;">HealthServe CWSS — Food Programme — ' + titleText + '</div>' +
+      '<div style="font-size:6.5pt;color:#aaa;text-align:right;">Al-Rich Express · 12pm–7pm Mon–Fri<br>Printed: ' + new Date().toLocaleDateString('en-GB') + '</div>' +
     '</div>' +
-    '<div class="psheet-note">' + noteText + '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:4mm;">' + cards + '</div>';
+    '<div class="note">' + noteText + '</div>' +
+    '<div class="grid">' + cards + '</div>' +
+    '<script>window.onload=function(){window.print();window.close();}<\/script>' +
+    '</body></html>';
 
-  var pa = document.getElementById('cards-print-area');
-  pa.innerHTML = html;
-  pa.style.display = 'block';
-  setTimeout(function() { window.print(); pa.style.display = 'none'; }, 200);
+  var w = window.open('', '_blank', 'width=800,height=600');
+  w.document.write(html);
+  w.document.close();
 }
 
 // Init
@@ -501,6 +562,7 @@ function checkPin(){
     document.getElementById('pin-screen').style.display='none';
     document.getElementById('main-app').style.display='block';
     loadWorkers();
+    dashLoadData();
   } else {
     const err=document.getElementById('pin-error');
     err.style.display='block';
