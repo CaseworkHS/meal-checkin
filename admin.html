@@ -121,15 +121,15 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard');dashLoadData();">Food Distribution Log</button>
-    <button class="tab-btn" onclick="switchTab('workers')">Worker list</button>
-    <button class="tab-btn" onclick="switchTab('add')">Add worker</button>
-    <button class="tab-btn" onclick="switchTab('bulk')">Bulk upload</button>
-    <button class="tab-btn" onclick="switchTab('cards')">Print coupons</button>
+    <button class="tab-btn active" id="tab-btn-dashboard" onclick="switchTab('dashboard')">Food Distribution Log</button>
+    <button class="tab-btn" id="tab-btn-workers" onclick="switchTab('workers')">Worker list</button>
+    <button class="tab-btn" id="tab-btn-add" onclick="switchTab('add')">Add worker</button>
+    <button class="tab-btn" id="tab-btn-bulk" onclick="switchTab('bulk')">Bulk upload</button>
+    <button class="tab-btn" id="tab-btn-cards" onclick="switchTab('cards')">Print coupons</button>
   </div>
 
   <!-- WORKER LIST TAB -->
-  <div id="tab-workers" class="tab-panel">
+  <div id="tab-workers" class="tab-panel" style="display:none;">
     <div class="stats">
       <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Total active</div></div>
       <div class="stat"><div class="num" id="stat-regular">0</div><div class="lbl">Regular</div></div>
@@ -205,6 +205,50 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
         4. App approves — logged as Walk-in in dashboard<br>
         5. <strong>Next month:</strong> if they continue, change type to Regular
       </div>
+    </div>
+  </div>
+
+
+  <!-- DASHBOARD TAB -->
+  <div id="tab-dashboard" class="tab-panel active">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+      <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;border:0.5px solid #eee;">
+        <div style="font-size:28px;font-weight:700;color:#085041;" id="d-stat-today">0</div>
+        <div style="font-size:11px;color:#888;margin-top:3px;">Meals today</div>
+      </div>
+      <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;border:0.5px solid #eee;">
+        <div style="font-size:28px;font-weight:700;color:#854F0B;" id="d-stat-remaining">30</div>
+        <div style="font-size:11px;color:#888;margin-top:3px;">Remaining cap</div>
+      </div>
+      <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;border:0.5px solid #eee;">
+        <div style="font-size:28px;font-weight:700;color:#8C0303;" id="d-stat-time">--:--</div>
+        <div style="font-size:11px;color:#888;margin-top:3px;">SG time now</div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;border:0.5px solid #eee;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+        <span style="font-weight:600;color:#333;">Daily cap usage</span>
+        <span style="color:#8C0303;font-weight:700;" id="d-cap-label">0 / 30 meals</span>
+      </div>
+      <div style="height:12px;background:#f0f0f0;border-radius:6px;overflow:hidden;">
+        <div id="d-cap-fill" style="height:100%;border-radius:6px;width:0%;background:#085041;transition:width 0.3s;"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn primary" style="width:auto;" onclick="dashLoad()">&#8635; Refresh</button>
+      <button class="btn" onclick="dashSetDate(0)">Today</button>
+      <input type="date" id="d-date" style="font-size:12px;padding:7px;border:1px solid #ddd;border-radius:8px;" onchange="dashLoadDate()">
+      <button class="btn green" onclick="dashExport()">Export CSV</button>
+      <span style="font-size:11px;color:#aaa;margin-left:auto;" id="d-refreshed"></span>
+    </div>
+
+    <div style="background:#fff;border-radius:10px;overflow:hidden;border:0.5px solid #eee;">
+      <div style="background:#8C0303;color:#fff;display:grid;grid-template-columns:36px 1fr 80px 90px 80px;padding:8px 12px;font-size:11px;font-weight:600;gap:4px;">
+        <div>#</div><div>Worker name</div><div>FIN last 4</div><div>Date</div><div>Time (SG)</div>
+      </div>
+      <div id="d-table"></div>
     </div>
   </div>
 
@@ -397,7 +441,7 @@ function buildBlankCard(type) {
   return '<div class="pcard">' +
 
     // Header
-    '<div style="background:' + headColor + ';padding:3mm 4mm 2.5mm;display:flex;justify-content:space-between;align-items:flex-start;">' +
+    '<div style="background:' + headColor + ';padding:3mm 4mm 2.5mm;display:flex;justify-content:space-between;align-items:flex-start;-webkit-print-color-adjust:exact;print-color-adjust:exact;">' +
       '<div>' +
         '<div style="color:#fff;font-size:8pt;font-weight:700;line-height:1.2;">HealthServe</div>' +
         '<div style="color:rgba(255,255,255,0.6);font-size:5pt;">healing, inspiring &amp; bridging communities</div>' +
@@ -477,7 +521,7 @@ function printCards() {
 
   function oneCard() {
     return '<div style="border:1.5pt solid ' + headColor + ';border-radius:3mm;overflow:hidden;font-family:Arial,sans-serif;background:#ffffff;page-break-inside:avoid;display:flex;flex-direction:column;">' +
-      '<div style="background:' + headColor + ';padding:3mm 4mm 2.5mm;display:flex;justify-content:space-between;align-items:flex-start;">' +
+      '<div style="background:' + headColor + ';padding:3mm 4mm 2.5mm;display:flex;justify-content:space-between;align-items:flex-start;-webkit-print-color-adjust:exact;print-color-adjust:exact;">' +
         '<div>' +
           '<div style="color:#ffffff;font-size:8pt;font-weight:bold;line-height:1.2;margin:0;padding:0;">HealthServe</div>' +
           '<div style="color:rgba(255,255,255,0.65);font-size:5pt;margin-top:0.5mm;">healing, inspiring &amp; bridging communities</div>' +
@@ -509,7 +553,7 @@ function printCards() {
           (isEvent ? '<span>HealthServe Event</span>' : '<span>&#9658; Al-Rich Express, 2 Lor 22 Geylang &nbsp;&nbsp; 12pm&ndash;7pm only</span>') +
         '</div>' +
       '</div>' +
-      '<div style="background:' + stripBg + ';border-top:0.5pt solid ' + stripBorder + ';padding:1.5mm 4mm;font-size:5.5pt;font-weight:bold;text-align:center;color:' + stripColor + ';line-height:1.4;">' + stripText + '</div>' +
+      '<div style="background:' + stripBg + ';border-top:0.5pt solid ' + stripBorder + ';padding:1.5mm 4mm;font-size:5.5pt;font-weight:bold;text-align:center;color:' + stripColor + ';line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact;">' + stripText + '</div>' +
       '<div style="background:#fafafa;border-top:0.5pt solid #eeeeee;padding:1.5mm 4mm;display:flex;justify-content:space-between;align-items:center;">' +
         '<div style="font-size:5pt;color:#aaaaaa;line-height:1.5;">Show Special Pass + this coupon<br>CWSS: +65 6983 6097</div>' +
         '<div style="font-size:5pt;color:' + headColor + ';font-weight:bold;text-align:right;line-height:1.5;">HealthServe CWSS<br>Food Programme</div>' +
@@ -521,7 +565,7 @@ function printCards() {
   for (var i = 0; i < copies; i++) cards += oneCard();
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
-    'body{margin:0;padding:8mm;font-family:Arial,sans-serif;background:#fff;}' +
+    'body{margin:0;padding:8mm;font-family:Arial,sans-serif;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
     '.grid{display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:4mm;}' +
     '.hdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:3mm;border-bottom:2pt solid #8C0303;margin-bottom:3mm;}' +
     '.note{background:#f9f9f7;border:0.5pt solid #ddd;border-radius:2mm;padding:2.5mm 4mm;margin-bottom:3mm;font-size:7pt;color:#555;line-height:1.7;}' +
@@ -545,7 +589,7 @@ function printCards() {
 
 // Init
 setCardType('walkin');
-dashLoadData();
+dashLoad();
 </script>
 
 </div>
@@ -573,9 +617,13 @@ function checkPin(){
 document.getElementById('pin-input').addEventListener('keypress',e=>{if(e.key==='Enter')checkPin();});
 
 function switchTab(t){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes("'"+t+"'")));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  var activeBtn=document.getElementById('tab-btn-'+t);
+  if(activeBtn)activeBtn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.remove('active');p.style.display='none';});
+  var panel=document.getElementById('tab-'+t);
+  if(panel){panel.classList.add('active');panel.style.display='block';}
+  if(t==='dashboard')dashLoad();
 }
 
 // dbGet defined above
@@ -802,22 +850,22 @@ async function dbGet(path){
 
 let dashAllData=[];
 
-async function dashLoadData(){
+async function dashLoad(){
   const today=sgDate();
-  document.getElementById('d-date-filter').value=today;
-  document.getElementById('d-refresh-time').textContent='Last refreshed: '+sgNow().toTimeString().slice(0,8);
+  if(document.getElementById('d-date')) document.getElementById('d-date').value=today;
+  if(document.getElementById('d-refreshed')) document.getElementById('d-refreshed').textContent='Refreshed: '+sgNow().toTimeString().slice(0,8);
   try{
     const all=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=500');
     dashAllData=Array.isArray(all)?all.filter(r=>r.checkin_date===today):[];
     dashUpdateStats(dashAllData);
     dashRenderTable(dashAllData);
   }catch(e){
-    document.getElementById('d-table-body').innerHTML='<div class=\"empty\">Connection error: '+e.message+'</div>';
+    if(document.getElementById('d-table')) document.getElementById('d-table').innerHTML='<div style="text-align:center;padding:30px;color:#aaa;">Connection error: '+e.message+'</div>';
   }
 }
 
-async function dashLoadFiltered(){
-  const d=document.getElementById('d-date-filter').value;
+async function dashLoadDate(){
+  const d=document.getElementById('d-date').value;
   if(!d)return;
   try{
     const data=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=500');
@@ -828,9 +876,9 @@ async function dashLoadFiltered(){
   }catch(e){}
 }
 
-function dashSetToday(){
-  document.getElementById('d-date-filter').value=sgDate();
-  dashLoadFiltered();
+function dashSetDate(offset){
+  document.getElementById('d-date').value=sgDate();
+  dashLoadDate();
 }
 
 function dashUpdateStats(data){
@@ -839,7 +887,7 @@ function dashUpdateStats(data){
   const pct=Math.min(100,(n/DAILY_CAP)*100);
   document.getElementById('d-stat-today').textContent=n;
   document.getElementById('d-stat-remaining').textContent=rem;
-  document.getElementById('d-cap-label-right').textContent=n+' / '+DAILY_CAP+' meals';
+  if(document.getElementById('d-cap-label'))document.getElementById('d-cap-label').textContent=n+' / '+DAILY_CAP+' meals';
   const fill=document.getElementById('d-cap-fill');
   fill.style.width=pct+'%';
   fill.style.background=pct>=90?'#8C0303':pct>=60?'#ECC11C':'#085041';
@@ -847,10 +895,10 @@ function dashUpdateStats(data){
 
 function dashRenderTable(data){
   if(!data.length){
-    document.getElementById('d-table-body').innerHTML='<div class="empty">No meals recorded for this date</div>';
+    document.getElementById('d-table').innerHTML='<div style="text-align:center;padding:30px;color:#aaa;font-size:13px;">No meals recorded for this date</div>';
     return;
   }
-  document.getElementById('d-table-body').innerHTML=data.map((r,i)=>`
+  document.getElementById('d-table').innerHTML=data.map((r,i)=>`
     <div class="table-row">
       <div style="color:#aaa;font-size:11px;">${i+1}</div>
       <div style="font-weight:500;color:#1a1a1a;">${r.worker_name||'--'}</div>
@@ -861,7 +909,7 @@ function dashRenderTable(data){
     </div>`).join('');
 }
 
-function dashExportCSV(){
+function dashExport(){
   if(!dashAllData.length){alert('No data to export');return;}
   const rows=[['#','Worker Name','FIN Last 4','Date','Time (SG)'],...dashAllData.map((r,i)=>[i+1,r.worker_name||'',r.fin_last4,r.checkin_date,r.checkin_time])];
   const a=document.createElement('a');
@@ -872,10 +920,10 @@ function dashExportCSV(){
 
 // Dashboard init - called after login
 function initDashboard(){
-  document.getElementById('d-header-date').textContent=sgNow().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('d-stat-time').textContent=sgNow().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);
-  document.getElementById('d-date-filter').value=sgDate();
-  dashLoadData();
+  document.getElementById('d-date').value=sgDate();
+  dashLoad();
   setInterval(()=>{document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);},10000);
   setInterval(dashLoadData,60000);
 }
