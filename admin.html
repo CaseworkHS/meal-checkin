@@ -126,6 +126,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
     <button class="tab-btn" id="tab-btn-add" onclick="switchTab('add')">Add worker</button>
     <button class="tab-btn" id="tab-btn-bulk" onclick="switchTab('bulk')">Bulk upload</button>
     <button class="tab-btn" id="tab-btn-cards" onclick="switchTab('cards')">Print coupons</button>
+    <button class="tab-btn" id="tab-btn-report" onclick="switchTab('report')">Weekly Report</button>
+    <button class="tab-btn" id="tab-btn-holidays" onclick="switchTab('holidays')">Holidays</button>
   </div>
 
   <!-- WORKER LIST TAB -->
@@ -218,7 +220,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
       </div>
       <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;border:0.5px solid #eee;">
         <div style="font-size:28px;font-weight:700;color:#854F0B;" id="d-stat-remaining">30</div>
-        <div style="font-size:11px;color:#888;margin-top:3px;">Remaining cap</div>
+        <div style="font-size:11px;color:#888;margin-top:3px;">Remaining (guideline)</div>
       </div>
       <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;border:0.5px solid #eee;">
         <div style="font-size:28px;font-weight:700;color:#8C0303;" id="d-stat-time">--:--</div>
@@ -332,6 +334,98 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
   </div>
 
 </div>
+
+<!-- WEEKLY REPORT TAB -->
+<div id="tab-report" class="tab-panel">
+
+  <div class="panel" style="margin-bottom:12px;">
+    <h3>Generate weekly food report</h3>
+    <div style="font-size:11px;color:#666;margin-bottom:14px;line-height:1.6;">
+      Pulls all check-ins for the selected period, groups by worker, and produces a printable report plus a payment voucher for Al-Rich Express.
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button id="rep-mode-week" class="btn primary" style="flex:1;" onclick="repSetMode('week')">Mon\u2013Fri week</button>
+      <button id="rep-mode-range" class="btn" style="flex:1;" onclick="repSetMode('range')">Custom range</button>
+    </div>
+
+    <div id="rep-week-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <label style="font-size:11px;color:#555;margin:0;">Pick any day in the week:</label>
+      <input type="date" id="rep-week-anchor" style="font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:auto;">
+    </div>
+
+    <div id="rep-range-controls" style="display:none;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <label style="font-size:11px;color:#555;margin:0;">From:</label>
+      <input type="date" id="rep-range-start" style="font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:auto;">
+      <label style="font-size:11px;color:#555;margin:0;">To:</label>
+      <input type="date" id="rep-range-end" style="font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:auto;">
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+      <label style="font-size:11px;color:#555;margin:0;">Voucher No.:</label>
+      <input type="text" id="rep-voucher-no" placeholder="e.g. 2026-014" style="font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:120px;">
+      <label style="font-size:11px;color:#555;margin:0;">Rate per meal:</label>
+      <span style="font-size:13px;font-weight:700;color:#8C0303;">$5.00</span>
+      <span style="font-size:10px;color:#aaa;">(fixed \u2014 contact Durga to change)</span>
+    </div>
+
+    <button class="btn primary" onclick="repGenerate()" style="width:100%;">Generate report &amp; voucher</button>
+  </div>
+
+  <div id="rep-output" style="display:none;"></div>
+
+</div>
+
+<!-- HOLIDAYS TAB -->
+<div id="tab-holidays" class="tab-panel">
+
+  <div class="panel" style="margin-bottom:12px;">
+    <h3>Public holidays &amp; office closures</h3>
+    <div style="font-size:11px;color:#666;margin-bottom:14px;line-height:1.6;">
+      Dates added here will show as <strong>"Closed for public holiday"</strong> on the worker check-in screen \u2014 no meal can be logged that day. Add any date: public holidays, haze closures, or one-off office closures.
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <input type="date" id="hol-date" style="font-size:12px;padding:8px 10px;border:1px solid #ddd;border-radius:6px;width:auto;">
+      <input type="text" id="hol-label" placeholder="e.g. Hari Raya Haji" style="font-size:12px;padding:8px 10px;border:1px solid #ddd;border-radius:6px;flex:1;min-width:140px;">
+      <button class="btn primary" onclick="holAdd()" style="width:auto;padding:8px 20px;">+ Add</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Upcoming &amp; saved dates</h3>
+    <div id="hol-list" style="margin-top:8px;"></div>
+  </div>
+
+</div>
+
+<!-- PRINT AREA for weekly report -->
+<div id="report-print-area" style="display:none;"></div>
+
+<style>
+@media print {
+  body.printing-report * { visibility: hidden; }
+  body.printing-report #report-print-area, body.printing-report #report-print-area * { visibility: visible; }
+  body.printing-report #report-print-area {
+    display: block !important;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+  }
+  @page { size: A4 portrait; margin: 10mm; }
+}
+.rep-table { width: 100%; border-collapse: collapse; font-size: 10px; font-family: Arial, sans-serif; }
+.rep-table th { background: #8C0303; color: #fff; padding: 6px 8px; text-align: left; font-size: 9.5px; }
+.rep-table td { padding: 5px 8px; border-bottom: 0.5px solid #eee; }
+.rep-table tr:nth-child(even) { background: #FAFAFA; }
+.rep-table .num { text-align: center; }
+.rep-table .tot { font-weight: 700; background: #FFF8E1 !important; }
+.voucher-box { border: 1.5pt solid #1a1a1a; padding: 18px 22px; font-family: Arial, sans-serif; font-size: 12px; margin-top: 24px; }
+.voucher-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.voucher-line { border-bottom: 1pt solid #1a1a1a; flex: 1; margin-left: 8px; min-height: 16px; }
+</style>
+
+
 
 <!-- PRINT AREA for cards -->
 <div id="cards-print-area" style="display:none;"></div>
@@ -883,14 +977,15 @@ function dashSetDate(offset){
 
 function dashUpdateStats(data){
   const n=data.length;
+  const over=n>DAILY_CAP;
   const rem=Math.max(0,DAILY_CAP-n);
   const pct=Math.min(100,(n/DAILY_CAP)*100);
   document.getElementById('d-stat-today').textContent=n;
-  document.getElementById('d-stat-remaining').textContent=rem;
-  if(document.getElementById('d-cap-label'))document.getElementById('d-cap-label').textContent=n+' / '+DAILY_CAP+' meals';
+  document.getElementById('d-stat-remaining').textContent=over?('+'+(n-DAILY_CAP)+' over'):rem;
+  if(document.getElementById('d-cap-label'))document.getElementById('d-cap-label').textContent=n+' / '+DAILY_CAP+' meals'+(over?'  \u26A0\uFE0F over guideline':'');
   const fill=document.getElementById('d-cap-fill');
   fill.style.width=pct+'%';
-  fill.style.background=pct>=90?'#8C0303':pct>=60?'#ECC11C':'#085041';
+  fill.style.background=over?'#8C0303':pct>=80?'#ECC11C':'#085041';
 }
 
 function dashRenderTable(data){
@@ -925,7 +1020,226 @@ function initDashboard(){
   document.getElementById('d-date').value=sgDate();
   dashLoad();
   setInterval(()=>{document.getElementById('d-stat-time').textContent=sgNow().toTimeString().slice(0,5);},10000);
-  setInterval(dashLoadData,60000);
+  setInterval(dashLoad,60000);
+  holLoad();
+  repInitDates();
+}
+
+// ============ HOLIDAYS ============
+function holHdrs(){ return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}; }
+
+async function holLoad(){
+  try{
+    const data=await dbGet('holidays?select=*&order=holiday_date.asc&limit=200');
+    const rows=Array.isArray(data)?data:[];
+    const today=sgDate();
+    const upcoming=rows.filter(r=>r.holiday_date>=today);
+    const past=rows.filter(r=>r.holiday_date<today);
+    if(!rows.length){
+      document.getElementById('hol-list').innerHTML='<div style="text-align:center;padding:20px;color:#aaa;font-size:12px;">No holidays added yet.</div>';
+      return;
+    }
+    function row(r,faded){
+      const d=new Date(r.holiday_date+'T00:00:00');
+      const dlabel=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:0.5px solid #eee;'+(faded?'opacity:0.45;':'')+'">'+
+        '<div><strong style="font-size:13px;">'+dlabel+'</strong>'+(r.label?'<div style="font-size:11px;color:#888;margin-top:2px;">'+r.label+'</div>':'')+'</div>'+
+        '<button onclick="holRemove('+r.id+')" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid #A32D2D;background:#fff;color:#A32D2D;cursor:pointer;">Remove</button>'+
+      '</div>';
+    }
+    let html='';
+    if(upcoming.length) html+=upcoming.map(r=>row(r,false)).join('');
+    if(past.length) html+='<div style="font-size:10px;color:#aaa;padding:10px 12px 2px;">Past dates</div>'+past.map(r=>row(r,true)).join('');
+    document.getElementById('hol-list').innerHTML=html;
+  }catch(e){
+    document.getElementById('hol-list').innerHTML='<div style="text-align:center;padding:20px;color:#aaa;font-size:12px;">Could not load holidays: '+e.message+'</div>';
+  }
+}
+
+async function holAdd(){
+  const dateVal=document.getElementById('hol-date').value;
+  const label=document.getElementById('hol-label').value.trim();
+  if(!dateVal){ alert('Please pick a date'); return; }
+  try{
+    const resp=await fetch(SB_URL+'/rest/v1/holidays',{
+      method:'POST',
+      headers:Object.assign({},holHdrs(),{'Content-Type':'application/json','Prefer':'return=representation'}),
+      body:JSON.stringify({holiday_date:dateVal,label:label||null})
+    });
+    if(!resp.ok){
+      const err=await resp.text();
+      if(err.includes('duplicate')||err.includes('unique')){ alert('That date is already added.'); }
+      else { alert('Could not add: '+err.slice(0,150)); }
+      return;
+    }
+    document.getElementById('hol-date').value='';
+    document.getElementById('hol-label').value='';
+    holLoad();
+  }catch(e){
+    alert('Error: '+e.message);
+  }
+}
+
+async function holRemove(id){
+  if(!confirm('Remove this date? Workers will be able to check in on this day again.')) return;
+  try{
+    await fetch(SB_URL+'/rest/v1/holidays?id=eq.'+id,{method:'DELETE',headers:holHdrs()});
+    holLoad();
+  }catch(e){
+    alert('Error removing: '+e.message);
+  }
+}
+
+// ============ WEEKLY REPORT ============
+var repMode='week';
+
+function repInitDates(){
+  document.getElementById('rep-week-anchor').value=sgDate();
+  const today=new Date(sgDate()+'T00:00:00');
+  const weekAgo=new Date(today); weekAgo.setDate(weekAgo.getDate()-7);
+  document.getElementById('rep-range-start').value=weekAgo.toISOString().slice(0,10);
+  document.getElementById('rep-range-end').value=sgDate();
+}
+
+function repSetMode(m){
+  repMode=m;
+  document.getElementById('rep-mode-week').className = m==='week' ? 'btn primary' : 'btn';
+  document.getElementById('rep-mode-range').className = m==='range' ? 'btn primary' : 'btn';
+  document.getElementById('rep-week-controls').style.display = m==='week' ? 'flex' : 'none';
+  document.getElementById('rep-range-controls').style.display = m==='range' ? 'flex' : 'none';
+}
+
+function repGetMonFri(anchorStr){
+  const anchor=new Date(anchorStr+'T00:00:00');
+  const dow=anchor.getDay(); // 0=Sun
+  const mondayOffset = dow===0 ? -6 : 1-dow;
+  const monday=new Date(anchor); monday.setDate(anchor.getDate()+mondayOffset);
+  const friday=new Date(monday); friday.setDate(monday.getDate()+4);
+  return {start:monday.toISOString().slice(0,10), end:friday.toISOString().slice(0,10)};
+}
+
+function repDateList(start,end){
+  const out=[]; let d=new Date(start+'T00:00:00'); const endD=new Date(end+'T00:00:00');
+  while(d<=endD){ out.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); }
+  return out;
+}
+
+async function repGenerate(){
+  let start,end;
+  if(repMode==='week'){
+    const r=repGetMonFri(document.getElementById('rep-week-anchor').value);
+    start=r.start; end=r.end;
+  }else{
+    start=document.getElementById('rep-range-start').value;
+    end=document.getElementById('rep-range-end').value;
+  }
+  if(!start||!end||start>end){ alert('Please check the dates selected.'); return; }
+
+  const voucherNo=document.getElementById('rep-voucher-no').value.trim()||'(not entered)';
+  const RATE=5.00;
+
+  try{
+    const all=await dbGet('meal_checkins?select=*&order=checkin_date.asc,checkin_time.asc&limit=2000');
+    const rows=(Array.isArray(all)?all:[]).filter(r=>r.checkin_date>=start && r.checkin_date<=end);
+
+    if(!rows.length){
+      document.getElementById('rep-output').style.display='block';
+      document.getElementById('rep-output').innerHTML='<div class="panel" style="text-align:center;color:#aaa;padding:30px;">No meals recorded between '+start+' and '+end+'.</div>';
+      return;
+    }
+
+    const dateList=repDateList(start,end);
+    // group by worker (name+fin)
+    const byWorker={};
+    rows.forEach(r=>{
+      const key=(r.worker_name||'Unknown')+'|'+r.fin_last4;
+      if(!byWorker[key]) byWorker[key]={name:r.worker_name||'Unknown', fin:r.fin_last4, perDate:{}};
+      byWorker[key].perDate[r.checkin_date]=(byWorker[key].perDate[r.checkin_date]||0)+1;
+    });
+    const workers=Object.values(byWorker).sort((a,b)=>a.name.localeCompare(b.name));
+
+    const dailyTotals=dateList.map(d=>rows.filter(r=>r.checkin_date===d).length);
+    const grandTotal=rows.length;
+    const amount=(grandTotal*RATE).toFixed(2);
+
+    function fmtShort(d){ const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+    function numberToWords(n){
+      const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+      const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+      function chunk(num, useAnd){
+        let parts=[];
+        if(num>=100){ parts.push(ones[Math.floor(num/100)]+'-Hundred'); num%=100; if(num>0 && useAnd) parts.push('and'); }
+        if(num>=20){ let t=tens[Math.floor(num/10)]; num%=10; if(num>0){ parts.push(t+'-'+ones[num]); num=0; } else { parts.push(t); } }
+        if(num>0) parts.push(ones[num]);
+        return parts.join(' ');
+      }
+      let intPart=Math.floor(n);
+      let words=[];
+      if(intPart>=1000){ words.push(chunk(Math.floor(intPart/1000),false)+'-Thousand'); intPart%=1000; }
+      if(intPart>0) words.push(chunk(intPart,true));
+      return words.join(' ');
+    }
+    const amountWords=numberToWords(Math.floor(grandTotal*RATE));
+    const cents=Math.round((grandTotal*RATE-Math.floor(grandTotal*RATE))*100);
+
+    // Build printable HTML
+    let tableRows=workers.map(w=>{
+      const cells=dateList.map(d=>'<td class="num">'+(w.perDate[d]||'')+'</td>').join('');
+      const wTotal=Object.values(w.perDate).reduce((a,b)=>a+b,0);
+      return '<tr><td>'+w.name+'</td><td class="num">'+w.fin+'</td>'+cells+'<td class="num tot">'+wTotal+'</td></tr>';
+    }).join('');
+
+    const dateHeaders=dateList.map(d=>'<th class="num">'+fmtShort(d)+'</th>').join('');
+    const totalsRow='<tr class="tot"><td colspan="2">Daily total</td>'+dailyTotals.map(t=>'<td class="num tot">'+t+'</td>').join('')+'<td class="num tot">'+grandTotal+'</td></tr>';
+
+    const reportHtml=
+      '<div style="font-family:Arial,sans-serif;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2pt solid #8C0303;padding-bottom:10px;margin-bottom:14px;">'+
+        '<div style="font-size:16px;font-weight:700;color:#8C0303;">HealthServe CWSS \u2014 Food Programme Report</div>'+
+        '<div style="font-size:11px;color:#888;text-align:right;">Al-Rich Express &middot; '+fmtShort(start)+' \u2013 '+fmtShort(end)+', '+new Date(end+'T00:00:00').getFullYear()+'</div>'+
+      '</div>'+
+      '<table class="rep-table"><thead><tr><th>Worker name</th><th>FIN</th>'+dateHeaders+'<th>Total</th></tr></thead>'+
+      '<tbody>'+tableRows+totalsRow+'</tbody></table>'+
+      '<div class="voucher-box">'+
+        '<div style="text-align:center;font-weight:700;font-size:14px;margin-bottom:14px;letter-spacing:1px;">PAYMENT VOUCHER</div>'+
+        '<div class="voucher-row"><span>Voucher No.:</span><span class="voucher-line">'+voucherNo+'</span></div>'+
+        '<div class="voucher-row"><span>Date:</span><span class="voucher-line">'+new Date().toLocaleDateString('en-GB')+'</span></div>'+
+        '<div class="voucher-row"><span>Pay to:</span><span class="voucher-line">Al-Rich Express Restaurant</span></div>'+
+        '<div style="margin:14px 0;">'+
+          '<div style="font-weight:700;font-size:11px;margin-bottom:4px;">DESCRIPTION</div>'+
+          '<div style="font-size:12px;">Geylang food project for special pass workers.<br>'+
+          'Period of '+fmtShort(start)+' to '+fmtShort(end)+', '+new Date(end+'T00:00:00').getFullYear()+'<br>'+
+          'Total: '+grandTotal+' meals</div>'+
+        '</div>'+
+        '<div class="voucher-row"><span style="font-weight:700;">AMOUNT</span><span class="voucher-line" style="text-align:right;font-weight:700;">$'+amount.replace('.', ' | ')+'</span></div>'+
+        '<div style="font-size:11px;margin:10px 0 18px;">The Sum of Dollars: <strong>'+amountWords+' Dollars'+(cents>0?' and '+cents+' Cents':'')+'</strong></div>'+
+        '<div style="display:flex;justify-content:space-between;margin-top:30px;">'+
+          '<div style="text-align:center;width:45%;"><div style="border-top:1pt solid #1a1a1a;padding-top:4px;font-size:11px;">Payment Approved by</div></div>'+
+          '<div style="text-align:center;width:45%;"><div style="border-top:1pt solid #1a1a1a;padding-top:4px;font-size:11px;">Received by</div></div>'+
+        '</div>'+
+      '</div>'+
+      '</div>';
+
+    document.getElementById('rep-output').style.display='block';
+    document.getElementById('rep-output').innerHTML=
+      '<div class="panel">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'+
+          '<h3 style="margin:0;">Report preview</h3>'+
+          '<button class="btn primary" style="width:auto;padding:8px 20px;" onclick="repPrint()">&#128438; Print / Save as PDF</button>'+
+        '</div>'+
+        '<div id="rep-preview" style="border:1px solid #eee;border-radius:8px;padding:16px;overflow-x:auto;">'+reportHtml+'</div>'+
+      '</div>';
+    document.getElementById('report-print-area').innerHTML=reportHtml;
+
+  }catch(e){
+    alert('Error generating report: '+e.message);
+  }
+}
+
+function repPrint(){
+  document.body.classList.add('printing-report');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('printing-report'),500);
 }
 </script>
 </body>

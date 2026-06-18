@@ -47,7 +47,7 @@ input:focus{outline:none;border-color:#8C0303;}
     <div class="hs-sub">healing, inspiring &amp; bridging communities</div>
     <div class="hs-badge">CWSS Food Programme</div>
   </div>
-  <div class="test-banner" id="test-banner">&#9881; TEST MODE</div>
+  <div class="test-banner" id="test-banner" style="display:none;">&#9881; TEST MODE</div>
   <div class="time-warn" id="time-warn">
     &#9201; <strong>12pm to 7pm, Monday to Friday only</strong><br>
     <span style="font-size:11px;">দুপুর ১২টা – সন্ধ্যা ৭টা | மதியம் 12 – மாலை 7</span>
@@ -77,15 +77,23 @@ input:focus{outline:none;border-color:#8C0303;}
 </div>
 <div class="slinks">
   <a href="staff.html">Staff</a> &nbsp;|&nbsp;
-  <a href="admin.html">Admin</a> &nbsp;|&nbsp;
-  <a href="#" id="test-toggle">Test mode</a>
+  <a href="admin.html">Admin</a>
 </div>
 
 <script>
 var SB = 'https://mstxqyftlshgwmzrrkyr.supabase.co/rest/v1/';
 var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zdHhxeWZ0bHNoZ3dtenJya3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODAxMjUsImV4cCI6MjA5Njc1NjEyNX0.6pwUe7fi1xFMuU83oZj7matMBzWiZtJUYl7nS9u6X50';
-var CAP = 30;
+var CAP = 30; // soft cap - shown as alert on dashboard, does NOT block check-in
 var testMode = false;
+var holidaySet = null; // populated from Supabase on load
+
+// Staff can access test mode via ?staff=cwfp26 in the URL - not shown to workers
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('staff') === 'cwfp26') {
+    testMode = true;
+  }
+})();
 
 function sgNow() {
   return new Date(new Date().toLocaleString('en-US', {timeZone: 'Asia/Singapore'}));
@@ -96,7 +104,21 @@ function sgDate() {
 }
 function isWeekday() { var d = sgNow().getDay(); return d >= 1 && d <= 5; }
 function inWindow() { var h = sgNow().getHours(); return h >= 12 && h < 19; }
+function isHoliday() { return holidaySet && holidaySet.has(sgDate()); }
 function hdrs() { return {apikey: KEY, Authorization: 'Bearer ' + KEY}; }
+
+async function loadHolidays() {
+  try {
+    var resp = await fetch(SB + 'holidays?select=holiday_date,label&limit=200', {headers: hdrs()});
+    var rows = await resp.json();
+    holidaySet = new Set();
+    if (Array.isArray(rows)) {
+      rows.forEach(function(r) { holidaySet.add(r.holiday_date); });
+    }
+  } catch(e) {
+    holidaySet = new Set(); // fail open - don't block check-in if holiday list can't load
+  }
+}
 
 function showStatus(cls, icon, title, msg) {
   document.getElementById('form-area').style.display = 'none';
@@ -115,14 +137,6 @@ function showForm() {
   document.getElementById('form-area').style.display = 'block';
 }
 
-function toggleTest() {
-  testMode = !testMode;
-  document.getElementById('test-btn').style.display = testMode ? 'block' : 'none';
-  document.getElementById('test-banner').style.display = testMode ? 'block' : 'none';
-  document.getElementById('test-toggle').textContent = testMode ? 'Disable test' : 'Test mode';
-  if (testMode) document.getElementById('time-warn').style.display = 'none';
-}
-
 async function doCheckin(bypass) {
   var name = document.getElementById('name-input').value.trim();
   var fin = document.getElementById('fin-input').value.trim().toUpperCase();
@@ -131,6 +145,14 @@ async function doCheckin(bypass) {
   if (fin.length !== 4) { alert('Please enter 4 characters of your FIN'); return; }
 
   if (!bypass) {
+    if (isHoliday()) {
+      showStatus('warning', '📅', 'Closed for public holiday',
+        '<strong>The food programme is closed today for a public holiday.</strong><br><br>' +
+        'আজ সরকারি ছুটির কারণে বন্ধ।<br>' +
+        'இன்று பொது விடுமுறை, மூடப்பட்டுள்ளது.<br><br>' +
+        'WhatsApp: <strong>+65 6983 6097</strong>');
+      return;
+    }
     if (!isWeekday() || !inWindow()) {
       showStatus('warning', '⏰', 'Not available now',
         '<strong>12pm to 7pm, Monday to Friday only</strong><br><br>' +
@@ -170,12 +192,9 @@ async function doCheckin(bypass) {
     var todayCheckins = Array.isArray(allCheckins) ? allCheckins.filter(function(c) { return c.checkin_date === today; }) : [];
 
     if (todayCheckins.length >= CAP) {
-      showStatus('warning', '🚫', 'Daily limit reached',
-        'Today\'s meals have been fully allocated.<br><br>' +
-        'আজকের খাবার শেষ হয়ে গেছে।<br>' +
-        'இன்றைய உணவு முடிந்துவிட்டது.<br><br>' +
-        'WhatsApp: <strong>+65 6983 6097</strong>');
-      return;
+      // Soft cap only - log a console note but do NOT block the check-in.
+      // The admin dashboard will show this day's bar in red once over CAP.
+      console.log('Daily cap of ' + CAP + ' exceeded - meal still being logged.');
     }
 
     // 3. Check duplicate from same list
@@ -227,12 +246,24 @@ async function doCheckin(bypass) {
 // Wire up buttons
 document.getElementById('checkin-btn').addEventListener('click', function() { doCheckin(false); });
 document.getElementById('test-btn').addEventListener('click', function() { doCheckin(true); });
-document.getElementById('test-toggle').addEventListener('click', function(e) { e.preventDefault(); toggleTest(); });
 document.getElementById('fin-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') doCheckin(false); });
 
 // Init
 document.getElementById('today-lbl').textContent = sgNow().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
-if (!isWeekday() || !inWindow()) document.getElementById('time-warn').style.display = 'block';
+if (testMode) {
+  document.getElementById('test-btn').style.display = 'block';
+  document.getElementById('test-banner').style.display = 'block';
+}
+loadHolidays().then(function() {
+  if (!testMode && (!isWeekday() || !inWindow() || isHoliday())) {
+    document.getElementById('time-warn').style.display = 'block';
+    if (isHoliday()) {
+      document.getElementById('time-warn').innerHTML = '&#128197; <strong>Closed today for a public holiday</strong><br>' +
+        '<span style="font-size:11px;">আজ সরকারি ছুটি | இன்று பொது விடுமுறை</span>';
+    }
+  }
+});
+
 </script>
 </body>
 </html>
