@@ -132,14 +132,20 @@ function showForm() {
 }
 
 async function doCheckin(bypass) {
-  var name = document.getElementById('name-input').value.trim();
-  var fin = document.getElementById('fin-input').value.trim().toUpperCase();
+  var btn = document.getElementById('checkin-btn');
+  if (btn.disabled) return;  // already in flight - ignore double-tap
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
 
-  if (!name) { alert('Please enter your name'); return; }
-  if (fin.length !== 4) { alert('Please enter 4 characters of your FIN'); return; }
+  var name = document.getElementById('name-input').value.trim();
+  var fin = document.getElementById('fin-input').value.replace(/\s/g,'').toUpperCase();
+
+  if (!name) { alert('Please enter your name'); btn.disabled=false; btn.style.opacity='1'; return; }
+  if (fin.length !== 4) { alert('Please enter 4 characters of your FIN'); btn.disabled=false; btn.style.opacity='1'; return; }
 
   if (!bypass) {
     if (isHoliday()) {
+      btn.disabled = false; btn.style.opacity = '1';
       showStatus('warning', '📅', 'Closed for public holiday',
         '<strong>The food programme is closed today for a public holiday.</strong><br><br>' +
         'আজ সরকারি ছুটির কারণে বন্ধ।<br>' +
@@ -148,6 +154,7 @@ async function doCheckin(bypass) {
       return;
     }
     if (!isWeekday() || !inWindow()) {
+      btn.disabled = false; btn.style.opacity = '1';
       showStatus('warning', '⏰', 'Not available now',
         '<strong>12pm to 7pm, Monday to Friday only</strong><br><br>' +
         'দুপুর ১২টা – সন্ধ্যা ৭টা (সোমবার–শুক্রবার)<br>' +
@@ -222,6 +229,7 @@ async function doCheckin(bypass) {
       throw new Error('Save failed ' + postResp.status + ': ' + postErr.slice(0, 100));
     }
 
+    btn.disabled = false; btn.style.opacity = '1';
     showStatus('success', '✅', 'Meal approved',
       '<strong style="font-size:16px;">' + regName + '</strong>' +
       (regName !== name ? '<br><small style="color:#888;">Entered: ' + name + '</small>' : '') +
@@ -232,6 +240,7 @@ async function doCheckin(bypass) {
       '<small style="color:#aaa;">' + today + ' \u00B7 ' + now.toTimeString().slice(0, 5) + ' SG \u00B7 Meal #' + (todayCheckins.length + 1) + '</small>');
 
   } catch(e) {
+    btn.disabled = false; btn.style.opacity = '1';
     showStatus('error', '⚠️', 'Connection error',
       e.message + '<br><br>Please try again.<br>WhatsApp: <strong>+65 6983 6097</strong>');
   }
