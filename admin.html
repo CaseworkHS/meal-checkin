@@ -356,8 +356,6 @@ body{font-family:Arial,sans-serif;background:#f5f5f3;padding:16px;}
       <input type="date" id="rep-range-end" style="font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:auto;">
     </div>
     <button class="btn primary" onclick="repLoad()" style="width:100%;" id="rep-load-btn">Load digital check-ins</button>
-    <button class="btn" onclick="repDebug()" style="width:100%;margin-top:6px;font-size:11px;background:#f5f5f5;color:#666;">Debug: show raw DB rows for this range</button>
-    <div id="rep-debug-out" style="display:none;margin-top:8px;font-size:11px;font-family:monospace;background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:10px;max-height:200px;overflow-y:auto;white-space:pre-wrap;"></div>
   </div>
 
   <!-- Step 2: Add paper coupons -->
@@ -1240,33 +1238,6 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
-async function repDebug(){
-  var start, end;
-  if(repMode==='week'){
-    var r = repGetMonFri(document.getElementById('rep-week-anchor').value);
-    start=r.start; end=r.end;
-  } else {
-    start = document.getElementById('rep-range-start').value;
-    end   = document.getElementById('rep-range-end').value;
-  }
-  var out = document.getElementById('rep-debug-out');
-  out.style.display='block';
-  out.textContent = 'Fetching... start=' + start + ' end=' + end;
-  try {
-    var all = await dbGet('meal_checkins?select=*&order=checkin_date.asc,checkin_time.asc&limit=10000');
-    var arr = Array.isArray(all) ? all : [];
-    var total = arr.length;
-    var inRange = arr.filter(function(r){ var d=(r.checkin_date||'').slice(0,10); return d>=start && d<=end; });
-    var lastFew = arr.slice(-5);
-    out.textContent = 
-      'Total rows fetched: ' + total + '\n' +
-      'In range (' + start + ' to ' + end + '): ' + inRange.length + '\n\n' +
-      'Last 5 rows in DB:\n' + lastFew.map(function(r){ return '  ' + JSON.stringify({date:r.checkin_date, name:r.worker_name}); }).join('\n') + '\n\n' +
-      'First row in range (if any):\n  ' + (inRange[0] ? JSON.stringify({date:inRange[0].checkin_date, name:inRange[0].worker_name}) : 'none');
-  } catch(e) {
-    out.textContent = 'ERROR: ' + e.message;
-  }
-}
 
 async function repLoad(){
   var start, end;
