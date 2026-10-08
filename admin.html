@@ -989,17 +989,35 @@ function sgNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'As
 function sgDate(d){d=d||sgNow();return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');}
 
 async function dbGet(path, maxRows){
-  var limit = maxRows || 10000;
-  const r=await fetch(SB_URL+'/rest/v1/'+path,{
-    headers:{
-      'apikey':SB_KEY,
-      'Authorization':'Bearer '+SB_KEY,
-      'Range':'0-' + (limit-1),
-      'Range-Unit':'items'
-    }
-  });
-  if(!r.ok)throw new Error('DB '+r.status);
-  return r.json();
+  // Supabase hard-caps at 1,000 rows per request regardless of Range header.
+  // Fetch in pages of 1,000 and concatenate until we have everything.
+  var pageSize = 1000;
+  var cap = maxRows || 20000;
+  var results = [];
+  var offset = 0;
+  while(offset < cap){
+    var end = offset + pageSize - 1;
+    // Strip any existing limit= param so we control pagination via Range only
+    var pagePath = path.replace(/[?&]limit=\d+/,'');
+    var sep = pagePath.indexOf('?') >= 0 ? '&' : '?';
+    pagePath = pagePath + sep + 'limit=' + pageSize + '&offset=' + offset;
+    const r = await fetch(SB_URL+'/rest/v1/'+pagePath,{
+      headers:{
+        'apikey':SB_KEY,
+        'Authorization':'Bearer '+SB_KEY,
+        'Range': offset + '-' + end,
+        'Range-Unit':'items',
+        'Prefer':'count=none'
+      }
+    });
+    if(!r.ok) throw new Error('DB '+r.status);
+    var page = await r.json();
+    if(!Array.isArray(page) || page.length === 0) break;
+    results = results.concat(page);
+    if(page.length < pageSize) break; // last page
+    offset += pageSize;
+  }
+  return results;
 }
 
 let dashAllData=[];
