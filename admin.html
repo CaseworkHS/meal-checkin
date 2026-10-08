@@ -1001,7 +1001,7 @@ async function dashLoad(){
   if(document.getElementById('d-date')) document.getElementById('d-date').value=today;
   if(document.getElementById('d-refreshed')) document.getElementById('d-refreshed').textContent='Refreshed: '+sgNow().toTimeString().slice(0,8);
   try{
-    const all=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=500');
+    const all=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=2000');
     dashAllData=Array.isArray(all)?all.filter(r=>r.checkin_date===today):[];
     dashUpdateStats(dashAllData);
     dashRenderTable(dashAllData);
@@ -1014,7 +1014,7 @@ async function dashLoadDate(){
   const d=document.getElementById('d-date').value;
   if(!d)return;
   try{
-    const data=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=500');
+    const data=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=2000');
     const filtered=Array.isArray(data)?data.filter(r=>r.checkin_date===d):[];
     dashAllData=filtered;
     dashUpdateStats(dashAllData);
@@ -1229,7 +1229,7 @@ async function repLoad(){
   btn.textContent='Loading...'; btn.disabled=true;
 
   try{
-    var all = await dbGet('meal_checkins?select=*&order=checkin_date.asc,checkin_time.asc&limit=2000');
+    var all = await dbGet('meal_checkins?select=*&order=checkin_date.asc,checkin_time.asc&limit=10000');
     repDigitalRows = (Array.isArray(all)?all:[]).filter(function(r){ return r.checkin_date>=start && r.checkin_date<=end; });
     repPaperCoupons = [];
     repStartCache = start;
