@@ -1008,7 +1008,7 @@ async function dashLoad(){
   if(document.getElementById('d-refreshed')) document.getElementById('d-refreshed').textContent='Refreshed: '+sgNow().toTimeString().slice(0,8);
   try{
     const all=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=2000');
-    dashAllData=Array.isArray(all)?all.filter(r=>r.checkin_date===today):[];
+    dashAllData=Array.isArray(all)?all.filter(r=>(r.checkin_date||'').slice(0,10)===today):[];
     dashUpdateStats(dashAllData);
     dashRenderTable(dashAllData);
   }catch(e){
@@ -1021,7 +1021,7 @@ async function dashLoadDate(){
   if(!d)return;
   try{
     const data=await dbGet('meal_checkins?select=*&order=checkin_time.asc&limit=2000');
-    const filtered=Array.isArray(data)?data.filter(r=>r.checkin_date===d):[];
+    const filtered=Array.isArray(data)?data.filter(r=>(r.checkin_date||'').slice(0,10)===d):[];
     dashAllData=filtered;
     dashUpdateStats(dashAllData);
     dashRenderTable(dashAllData);
@@ -1236,7 +1236,7 @@ async function repLoad(){
 
   try{
     var all = await dbGet('meal_checkins?select=*&order=checkin_date.asc,checkin_time.asc&limit=10000');
-    repDigitalRows = (Array.isArray(all)?all:[]).filter(function(r){ return r.checkin_date>=start && r.checkin_date<=end; });
+    repDigitalRows = (Array.isArray(all)?all:[]).filter(function(r){ var d=(r.checkin_date||'').slice(0,10); return d>=start && d<=end; });
     repPaperCoupons = [];
     repStartCache = start;
     repEndCache   = end;
